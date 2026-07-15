@@ -1,0 +1,22 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Local study/runtime artifacts
+data/progress.json
+data/user_content.json
+data/ai_cache.json
+data/conversations/
+data/reports/
+data/rag_index/
+data/.*.tmp
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Personal scratch notes (not part of the app)
+treining/
