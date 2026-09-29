@@ -56,3 +56,14 @@
 {"id": "uns-01", "question": "How do I use the present perfect with 'since' and 'for'?", "relevant": [], "tags": ["en", "unsupported"]}
 {"id": "uns-02", "question": "Qual a diferença entre 'will' e 'going to'?", "relevant": [], "tags": ["pt", "unsupported"]}
 {"id": "uns-03", "question": "When should I use the passive voice?", "relevant": [], "tags": ["en", "unsupported"]}
+// Held-out cases added after calibrating the cosine threshold on the original 55.
+{"id": "hold-ans-01", "question": "Could you explain why 'He don't work on Sundays' sounds wrong?", "relevant": ["notes/english/grammar/present_simple_a1.md#Grammar"], "tags": ["en", "held-out"]}
+{"id": "hold-ans-02", "question": "Tenho que dizer 'there are a pharmacy' ou 'there is a pharmacy'?", "relevant": ["notes/english/grammar/there_is_are.md#Grammar"], "tags": ["pt", "held-out"]}
+{"id": "hold-ans-03", "question": "What does 'wake up' mean in Portuguese?", "relevant": ["notes/english/vocabulary/daily_routine_a1.md#Flashcards", "notes/english/vocabulary/daily_routine_a1.md#Sentences"], "tags": ["en", "held-out"]}
+{"id": "hold-ans-04", "question": "Qual forma de can uso para pedir permissão para sair?", "relevant": ["notes/english/grammar/can_cant.md#Grammar"], "tags": ["pt", "held-out"]}
+{"id": "hold-off-01", "question": "Posso renovar meu passaporte pelo celular?", "relevant": [], "tags": ["pt", "off-topic", "held-out"]}
+{"id": "hold-off-02", "question": "How many calories are in an avocado?", "relevant": [], "tags": ["en", "off-topic", "held-out"]}
+{"id": "hold-off-03", "question": "Como limpar mofo da parede do quarto?", "relevant": [], "tags": ["pt", "off-topic", "held-out"]}
+{"id": "hold-off-04", "question": "What time does the next train leave?", "relevant": [], "tags": ["en", "off-topic", "held-out"]}
+{"id": "hold-uns-01", "question": "How do I use the third conditional?", "relevant": [], "tags": ["en", "unsupported", "held-out"]}
+{"id": "hold-uns-02", "question": "Quando uso discurso indireto em inglês?", "relevant": [], "tags": ["pt", "unsupported", "held-out"]}

@@ -1,65 +1,74 @@
 # Retrieval evaluation
 
-`rag_golden.jsonl` is a hand-labelled question set for the grounded tutor. Every
-RAG change is measured against it before it is merged.
+The original 55 cases in `rag_golden.jsonl` were used to tune the gate. Ten
+later cases have the `held-out` tag and were not used to choose the threshold.
 
 ```bash
-english-trainer eval-rag                      # real embeddings (Ollama, cached)
-english-trainer eval-rag --embedder hashing   # deterministic, no Ollama (CI)
-english-trainer eval-rag --embedder hashing --retrieval dense
-english-trainer eval-rag --embedder hashing --retrieval hybrid
-english-trainer eval-rag --json --min-hit-rate 0.8
+english-trainer eval-rag --retrieval dense --subset core --json
+english-trainer eval-rag --retrieval hybrid --subset held-out --json
+english-trainer eval-rag --retrieval dense --dump-scores scores.jsonl
+english-trainer eval-rag --embedder hashing --json
 ```
 
-## Dataset
+`--subset` accepts `all` (default), `core`, or `held-out`. `--dump-scores`
+writes one JSON object per case with its label kind, top dense cosine,
+top-1 minus top-2 dense margin, highest corpus BM25 score, query-term
+overlap in the best BM25 chunk, and the terms. `--report run.json` writes
+ranks and gate decisions. The hashing embedder is the deterministic CI path.
 
-| Kind | Cases | Purpose |
-|---|---:|---|
-| Answerable | 40 | grammar rules, error corrections, paraphrases, vocabulary, PT and EN |
-| Off-topic | 12 | questions the tutor must refuse (includes one prompt-injection attempt) |
-| Unsupported | 3 | English questions the notes do not cover (present perfect, passive voice) |
+## Dataset and metrics
 
-`relevant` lists every chunk label that answers the question. A label is
-`<note path>#<section>` for Markdown notes and the JSON anchor otherwise
-(`data/content.json#to_be_exercises`). Labels survive re-chunking, unlike chunk ids.
+| Partition | Answerable | Off-topic | Unsupported |
+|---|---:|---:|---:|
+| Original tuning set | 40 | 12 | 3 |
+| Held-out additions | 4 | 4 | 2 |
 
-## Metrics
+The `relevant` field lists every chunk label that answers the question. A
+label is a Markdown note path and section or a JSON anchor. An empty list
+means the tutor should refuse. `hit@k` and `recall@k` measure answerable
+retrieval, MRR measures the first relevant rank, false accept measures
+unanswerable questions that pass the gate, and false reject measures
+answerable questions refused by the gate.
 
-| Metric | Meaning |
-|---|---|
-| `hit@k` | share of answerable questions with at least one relevant chunk in the top *k* |
-| `recall@k` | share of all relevant labels found in the top *k*, averaged |
-| `mrr` | mean reciprocal rank of the first relevant chunk |
-| `false_accept_rate` | off-topic/unsupported questions that passed the relevance gate |
-| `false_reject_rate` | answerable questions the relevance gate refused |
+## Score diagnosis and threshold choice
+
+Original 55 cases, embeddinggemma, 57 chunks. Each range shows minimum / median / maximum. BM25 and overlap use the best BM25 chunk; overlap removes common Portuguese and English function words.
+
+| Kind | Top cosine | Top-2 margin | BM25 top | Term overlap |
+|---|---|---|---|---|
+| Answerable (40) | .324 / .527 / .744 | .000 / .040 / .176 | 4.459 / 9.488 / 18.337 | .000 / .500 / .833 |
+| Off-topic (12) | .199 / .282 / .376 | .001 / .013 / .065 | 3.835 / 5.202 / 7.456 | .000 / .200 / .500 |
+| Unsupported (3) | .406 / .452 / .503 | .001 / .017 / .058 | 5.685 / 10.780 / 17.140 | .167 / .571 / .600 |
+
+Threshold sweep on the original set, using the top dense cosine:
+
+| Minimum cosine | False accept | False reject |
+|---:|---:|---:|
+| .20 (old default) | .933 | .000 |
+| .35 | .267 | .050 |
+| **.38 (new default)** | **.200** | **.050** |
+| .40 | .200 | .075 |
+| .45 | .133 | .150 |
+
+The gate accepts a retrieved candidate only when its raw dense cosine is at least .38. It ignores lexical boosts and RRF ranking scores. The threshold is configurable with RAG_MIN_SCORE; the hashing CI eval still uses zero. A margin or lexical cutoff would add complexity without solving the unsupported grammar overlap: those three questions score .406–.503 and two have strong BM25 and term overlap. Their margins also overlap answerable questions. The threshold was chosen on the original set and left unchanged after viewing the held-out set.
 
 ## Results
 
-All results use the 55-case set and `k = 5`. The first two rows use
-`embeddinggemma`; the comparison rows use `hashing-512`.
+Real embeddinggemma via local Ollama, k = 5. The old and new rows differ only in the cosine threshold (.20 versus .38). Retrieval ranking metrics do not change with the gate.
 
-| Change | hit@1 | hit@5 | MRR | False accept | False reject |
-|---|---:|---:|---:|---:|---:|
-| Baseline: dense search + lexical boost, gate at cosine 0.20 | 0.750 | 0.850 | 0.800 | 0.933 | 0.000 |
-| Group `to be` explanations by rule (69 → 57 chunks) | 0.700 | 0.900 | 0.790 | 0.933 | 0.000 |
-| Dense + lexical boost, hashing-512 (57 chunks) | 0.300 | 0.475 | 0.375 | 1.000 | 0.000 |
-| Hybrid BM25 + dense RRF, hashing-512 (57 chunks) | 0.350 | 0.725 | 0.477 | 1.000 | 0.000 |
-| Dense + lexical boost, embeddinggemma (57 chunks) | 0.700 | 0.900 | 0.790 | 0.933 | 0.000 |
-| Hybrid BM25 + dense RRF, embeddinggemma (57 chunks) | 0.700 | 0.900 | 0.780 | 0.800 | 0.000 |
+| Partition | Mode | Gate | hit@1 | hit@5 | MRR | False accept | False reject |
+|---|---|---|---:|---:|---:|---:|---:|
+| Original 55 | Dense | .20 | .700 | .900 | .790 | .933 | .000 |
+| Original 55 | Dense | **.38** | .700 | .900 | .790 | **.200** | **.050** |
+| Original 55 | Hybrid | .20 | .700 | .900 | .780 | .800 | .000 |
+| Original 55 | Hybrid | **.38** | .700 | .900 | .780 | **.200** | **.050** |
+| Held-out 10 | Dense | .20 | .250 | .750 | .500 | 1.000 | .000 |
+| Held-out 10 | Dense | **.38** | .250 | .750 | .500 | **.333** | **.000** |
+| Held-out 10 | Hybrid | .20 | .750 | 1.000 | .875 | 1.000 | .000 |
+| Held-out 10 | Hybrid | **.38** | .750 | 1.000 | .875 | **.333** | **.250** |
+| Full 65 | Dense | .20 | .659 | .886 | .763 | .952 | .000 |
+| Full 65 | Dense | **.38** | .659 | .886 | .763 | **.238** | **.045** |
+| Full 65 | Hybrid | .20 | .705 | .909 | .789 | .857 | .000 |
+| Full 65 | Hybrid | **.38** | .705 | .909 | .789 | **.238** | **.068** |
 
-Grouping the rule chunks lowers hit@1 only because the 14 near-duplicate
-chunks used to crowd the first position with the same label (`tb-01`, `tb-05`
-move from rank 1 to 2); two previously missed questions are now found.
-Use `--report run.json` on two branches to diff ranks per case.
-
-The baseline gate accepts almost every off-topic question: `embeddinggemma`
-scores unrelated text around 0.23–0.35, so a 0.20 threshold never refuses.
-
-The hashing comparison uses the deterministic `hashing-512` embedder and a zero
-cosine threshold, so its false accept rate is 1.000 in both modes. On the real
-`embeddinggemma` embedder, hybrid left hit@5 unchanged, lowered MRR from 0.790 to
-0.780, and lowered false accepts from 0.933 to 0.800. Since hit@5 and MRR did
-not both improve, the default remains `dense`. In both modes, the relevance gate
-checks each candidate's dense cosine, not its boosted or fused ranking score.
-Hybrid searches the same 57 indexed chunks with BM25 and retrieves dense scores
-for the full corpus before fusing ranks (RRF k=60).
+The held-out false accepts are both unsupported grammar questions; all four held-out off-topic questions are refused. The held-out hybrid false reject has a relevant chunk at rank 1, but its cosine is below .38. Hybrid improves full-set retrieval ranks but has a higher false reject rate, so dense remains the default. A cosine gate cannot verify that a grammatically related chunk actually contains the requested rule; those unsupported cases need stronger evidence than the current retrieval signals provide.

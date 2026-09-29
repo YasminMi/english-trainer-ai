@@ -17,7 +17,8 @@ from english_trainer.rag.embeddings import (
 )
 from english_trainer.rag.evaluation import EvalReport, evaluate, load_cases
 from english_trainer.rag.index import KnowledgeIndex
-from english_trainer.rag.retrieval import DenseRetriever, HybridRetriever
+from english_trainer.rag.relevance import relevant_hits
+from english_trainer.rag.retrieval import BM25Index, DenseRetriever, HybridRetriever, search_tokens
 from english_trainer.rag.vector_store import QdrantKnowledgeStore
 from english_trainer.storage.content import ContentRepository
 
@@ -30,7 +31,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--retrieval",
         choices=["dense", "hybrid"],
-        help="retrieval mode (default: RAG_RETRIEVAL, or hybrid)",
+        help="retrieval mode (default: RAG_RETRIEVAL, or dense)",
     )
     parser.add_argument(
         "--embedder",
@@ -39,6 +40,15 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         help="'hashing' is deterministic and needs no Ollama (used in CI)",
     )
     parser.add_argument("--json", action="store_true", help="print the summary as JSON")
+    parser.add_argument(
+        "--dump-scores", type=Path, help="write per-case retrieval signals as JSON Lines"
+    )
+    parser.add_argument(
+        "--subset",
+        choices=["all", "core", "held-out"],
+        default="all",
+        help="evaluate all cases or one labelled partition",
+    )
     parser.add_argument(
         "--no-cache",
         action="store_true",
@@ -59,6 +69,8 @@ def run(args: argparse.Namespace, settings: Settings) -> int:
     paths = settings.paths
     dataset = args.dataset or paths.home / DEFAULT_DATASET
     cases = load_cases(dataset)
+    if args.subset != "all":
+        cases = [case for case in cases if ("held-out" in case.tags) == (args.subset == "held-out")]
 
     embedder: Embedder
     if args.embedder == "hashing":
@@ -88,10 +100,45 @@ def run(args: argparse.Namespace, settings: Settings) -> int:
             retriever,
             cases,
             k=args.k,
-            gate=lambda hits: any(
-                hit.dense_score is not None and hit.dense_score >= min_score for hit in hits
-            ),
+            gate=lambda hits: bool(relevant_hits(hits, min_score=min_score)),
         )
+        if args.dump_scores:
+            bm25 = BM25Index(chunks)
+            rows = []
+            for case in cases:
+                vector = embedder.embed([case.question])[0]
+                dense = store.search(vector, limit=2)
+                sparse = bm25.search(case.question, limit=1)
+                terms = search_tokens(case.question)
+                matched = (
+                    terms
+                    & search_tokens(
+                        f"{sparse[0][0].title} {sparse[0][0].topic} {sparse[0][0].text}"
+                    )
+                    if sparse
+                    else set()
+                )
+                rows.append(
+                    {
+                        "id": case.id,
+                        "kind": "answerable"
+                        if case.answerable
+                        else next(
+                            (tag for tag in case.tags if tag in {"off-topic", "unsupported"}),
+                            "unanswerable",
+                        ),
+                        "dense_top": dense[0].score if dense else None,
+                        "dense_margin": dense[0].score - dense[1].score if len(dense) > 1 else None,
+                        "bm25_top": sparse[0][1] if sparse else 0.0,
+                        "term_overlap": len(matched) / len(terms) if terms else 0.0,
+                        "query_terms": sorted(terms),
+                        "matched_terms": sorted(matched),
+                    }
+                )
+            args.dump_scores.write_text(
+                "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+                encoding="utf-8",
+            )
     finally:
         store.close()
 

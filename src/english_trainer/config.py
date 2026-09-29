@@ -104,7 +104,7 @@ class RagSettings(BaseSettings):
 
     model: str = "gemma2:2b"
     embed_model: str = "embeddinggemma"
-    min_score: float = Field(default=0.20, ge=0.0, le=1.0)
+    min_score: float = Field(default=0.38, ge=0.0, le=1.0)
     top_k: int = Field(default=2, ge=1, le=10)
     retrieval: Literal["dense", "hybrid"] = "dense"
 

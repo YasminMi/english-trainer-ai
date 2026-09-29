@@ -13,6 +13,7 @@ from english_trainer.rag.embeddings import EmbeddingError
 from english_trainer.rag.index import KnowledgeIndex
 from english_trainer.rag.models import KnowledgeChunk, RagSource, SearchHit
 from english_trainer.rag.prompts import SYSTEM_PROMPT, build_prompt, learner_context
+from english_trainer.rag.relevance import relevant_hits
 from english_trainer.rag.retrieval import HybridRetriever, Retriever
 from english_trainer.rag.vector_store import VectorStoreError
 
@@ -37,7 +38,7 @@ class RagAnswer:
 class RagConfig:
     model: str = "gemma2:2b"
     top_k: int = 2
-    min_score: float = 0.20
+    min_score: float = 0.38
     max_tokens: int = 160
     timeout: float = 180.0
 
@@ -76,7 +77,7 @@ class RagService:
             hits = self.retriever.retrieve(question, limit=self.config.top_k * 2)
         except (EmbeddingError, VectorStoreError, IndexError) as exc:
             raise RagError(str(exc)) from exc
-        return [hit for hit in hits if self._is_relevant(hit)][: self.config.top_k]
+        return relevant_hits(hits, min_score=self.config.min_score)[: self.config.top_k]
 
     def ask(
         self,
@@ -127,9 +128,6 @@ class RagService:
         close = getattr(self.index.store, "close", None)
         if callable(close):
             close()
-
-    def _is_relevant(self, hit: SearchHit) -> bool:
-        return hit.dense_score is not None and hit.dense_score >= self.config.min_score
 
     def _generate(self, prompt: str) -> str:
         try:
