@@ -40,6 +40,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         help="re-embed everything (default: reuse vectors cached under data/.cache)",
     )
     parser.add_argument(
+        "--report", type=Path, help="write per-case results as JSON (useful to diff two runs)"
+    )
+    parser.add_argument(
         "--min-hit-rate",
         type=float,
         default=None,
@@ -78,6 +81,11 @@ def run(args: argparse.Namespace, settings: Settings) -> int:
         store.close()
 
     _print(report, as_json=args.json, chunks=len(chunks), embedder=embedder.model)
+    if args.report:
+        args.report.write_text(
+            json.dumps({"summary": report.summary(), "cases": report.cases()}, indent=2),
+            encoding="utf-8",
+        )
     if args.min_hit_rate is not None and report.hit_rate() < args.min_hit_rate:
         print(
             f"Quality gate failed: hit@{args.k} {report.hit_rate():.3f} < {args.min_hit_rate}",

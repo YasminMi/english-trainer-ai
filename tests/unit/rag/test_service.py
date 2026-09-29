@@ -215,3 +215,19 @@ def test_response_language(question: str, language: str) -> None:
 def test_messages_have_expected_shape() -> None:
     message: ChatMessage = {"role": "user", "content": "hi"}
     assert set(message) == {"role", "content"}
+
+
+def test_rule_variants_are_grouped_under_their_shared_rule(tmp_path: Path) -> None:
+    rule = "No presente, usamos: I am / he-she-it is / you-we-they are."
+    exercises = [
+        {"question": f"{subject} ___ ready.", "correct": verb, "pt": "...",
+         "explanation": f"{rule} Aqui, com '{subject}', a forma correta é '{verb}'."}
+        for subject, verb in (("He", "is"), ("I", "am"), ("They", "are"))
+    ]  # fmt: skip
+
+    chunks = build_knowledge_chunks({"to_be_exercises": exercises}, tmp_path / "notes", tmp_path)
+
+    assert len(chunks) == 1
+    assert chunks[0].text.count(rule) == 1
+    assert "com 'They'" in chunks[0].text
+    assert chunks[0].metadata["example_count"] == 3

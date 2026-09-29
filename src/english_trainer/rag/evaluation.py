@@ -109,6 +109,18 @@ class EvalReport:
             "p50_latency_ms": round(self.p50_latency_ms, 1),
         }
 
+    def cases(self) -> list[dict[str, object]]:
+        """Per-case details, for diffing two runs."""
+        return [
+            {
+                "id": result.case.id,
+                "rank": result.first_relevant_rank,
+                "accepted": result.accepted,
+                "top": list(result.ranked[:3]),
+            }
+            for result in self.results
+        ]
+
     def format(self) -> str:
         lines = ["Retrieval evaluation", "=" * 40]
         lines += [f"{name:<20} {value}" for name, value in self.summary().items()]

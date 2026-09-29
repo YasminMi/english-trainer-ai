@@ -38,6 +38,12 @@ Measured with `embeddinggemma` on the 55-case set, `k = 5`.
 | Change | hit@1 | hit@5 | MRR | False accept | False reject |
 |---|---:|---:|---:|---:|---:|
 | Baseline: dense search + lexical boost, gate at cosine 0.20 | 0.750 | 0.850 | 0.800 | 0.933 | 0.000 |
+| Group `to be` explanations by rule (69 → 57 chunks) | 0.700 | 0.900 | 0.790 | 0.933 | 0.000 |
+
+Grouping the rule chunks lowers hit@1 only because the 14 near-duplicate
+chunks used to crowd the first position with the same label (`tb-01`, `tb-05`
+move from rank 1 to 2); two previously missed questions are now found.
+Use `--report run.json` on two branches to diff ranks per case.
 
 The baseline gate accepts almost every off-topic question: `embeddinggemma`
 scores unrelated text around 0.23–0.35, so a 0.20 threshold never refuses.

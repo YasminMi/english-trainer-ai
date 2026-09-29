@@ -99,27 +99,37 @@ def _markdown_sections(text: str) -> tuple[str, list[tuple[str, str]]]:
     return title, [(heading, body) for heading, body in sections if body]
 
 
+def _split_rule(explanation: str) -> tuple[str, str]:
+    """Split ``"<general rule>. <case-specific note>"`` into its two parts."""
+    rule, _, note = explanation.partition(". ")
+    return (f"{rule}." if note else rule), note
+
+
 def _chunks_from_explanations(exercises: list[dict[str, Any]]) -> list[KnowledgeChunk]:
-    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    """One chunk per general rule, illustrated with one example per case-specific note.
+
+    Exercise explanations repeat the same rule with a per-subject tail ("Aqui,
+    com 'He'..."). Indexing each variant separately filled the top results
+    with near-duplicates, so variants are grouped under their shared rule.
+    """
+    by_rule: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
     for exercise in exercises:
         explanation = str(exercise.get("explanation", "")).strip()
         if explanation:
-            grouped[explanation].append(exercise)
+            rule, note = _split_rule(explanation)
+            by_rule[rule].setdefault(note, exercise)
 
     chunks: list[KnowledgeChunk] = []
-    for explanation, examples in grouped.items():
-        sample_lines = []
-        for example in examples[:3]:
+    for rule, examples in by_rule.items():
+        lines = []
+        for note, example in examples.items():
             question = str(example.get("question", "")).strip()
             correct = str(example.get("correct", "")).strip()
             pt = str(example.get("pt", "")).strip()
-            sample_lines.append(f"Example: {question} → {correct} ({pt})")
-        text = "To be grammar rule\n\n" + explanation
-        if sample_lines:
-            text += "\n\n" + "\n".join(sample_lines)
+            lines.append(f"- {question} → {correct} ({pt}). {note}".rstrip(". ") + ".")
         chunks.append(
             _make_chunk(
-                text=text,
+                text="To be grammar rule\n\n" + rule + "\n\nExamples:\n" + "\n".join(lines),
                 source="data/content.json#to_be_exercises",
                 title="To be grammar rule",
                 topic="to_be",
