@@ -11,6 +11,7 @@ data/ai_cache.json
 data/conversations/
 data/reports/
 data/rag_index/
+data/logs/
 data/.*.tmp
 
 # OS/editor

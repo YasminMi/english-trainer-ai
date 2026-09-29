@@ -28,6 +28,14 @@ def main(argv: list[str] | None = None) -> int:
 
     load_dotenv()
 
+    from english_trainer.config import get_settings
+    from english_trainer.logging_config import configure_logging
+
+    settings = get_settings()
+    # The TUI owns the terminal, so its logs go to a file instead of stderr.
+    log_file = None if args.cli else settings.paths.data_dir / "logs" / "english-trainer.log"
+    configure_logging(settings.logging, log_file=log_file)
+
     if args.cli:
         from english_trainer.cli import run_app
 
