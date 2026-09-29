@@ -22,7 +22,7 @@ from english_trainer.rag.chunking import build_knowledge_chunks
 from english_trainer.rag.embeddings import OllamaEmbeddingClient
 from english_trainer.rag.index import KnowledgeIndex
 from english_trainer.rag.models import KnowledgeChunk
-from english_trainer.rag.retrieval import DenseRetriever
+from english_trainer.rag.retrieval import DenseRetriever, HybridRetriever
 from english_trainer.rag.vector_store import QdrantKnowledgeStore, VectorStoreError
 from english_trainer.services.coach import CoachService
 from english_trainer.services.conversation import ConversationSession
@@ -99,7 +99,11 @@ class Application:
 
         return RagService(
             index=KnowledgeIndex(embedder, store, paths.rag_index_dir),
-            retriever=DenseRetriever(embedder, store, oversample=1),
+            retriever=(
+                HybridRetriever(embedder, store)
+                if settings.rag.retrieval == "hybrid"
+                else DenseRetriever(embedder, store, oversample=1)
+            ),
             generator=self.ollama,
             chunk_builder=chunks,
             config=RagConfig(

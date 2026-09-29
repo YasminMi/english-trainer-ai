@@ -13,7 +13,7 @@ from english_trainer.rag.embeddings import EmbeddingError
 from english_trainer.rag.index import KnowledgeIndex
 from english_trainer.rag.models import KnowledgeChunk, RagSource, SearchHit
 from english_trainer.rag.prompts import SYSTEM_PROMPT, build_prompt, learner_context
-from english_trainer.rag.retrieval import Retriever
+from english_trainer.rag.retrieval import HybridRetriever, Retriever
 from english_trainer.rag.vector_store import VectorStoreError
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,10 @@ class RagService:
         if not chunks:
             raise RagError("No study content was available for indexing.")
         try:
-            return self.index.sync(chunks, force=force)
+            count = self.index.sync(chunks, force=force)
+            if isinstance(self.retriever, HybridRetriever):
+                self.retriever.set_chunks(chunks)
+            return count
         except (EmbeddingError, VectorStoreError) as exc:
             raise RagError(str(exc)) from exc
 
@@ -126,8 +129,7 @@ class RagService:
             close()
 
     def _is_relevant(self, hit: SearchHit) -> bool:
-        dense = hit.dense_score if hit.dense_score is not None else hit.score
-        return dense >= self.config.min_score
+        return hit.dense_score is not None and hit.dense_score >= self.config.min_score
 
     def _generate(self, prompt: str) -> str:
         try:

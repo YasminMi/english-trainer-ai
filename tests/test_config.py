@@ -16,6 +16,7 @@ def test_defaults_match_documented_values() -> None:
     assert settings.rag.model == "gemma2:2b"
     assert settings.rag.embed_model == "embeddinggemma"
     assert settings.rag.min_score == pytest.approx(0.20)
+    assert settings.rag.retrieval == "hybrid"
     assert settings.huggingface.enabled is False
     assert settings.ai.local_fallback is False
 
@@ -38,6 +39,14 @@ def test_secrets_are_not_leaked_in_repr(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setenv("HF_TOKEN", "hf_super_secret")
 
     assert "hf_super_secret" not in repr(Settings())
+
+
+def test_retrieval_mode_is_typed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAG_RETRIEVAL", "hybrid")
+    assert Settings().rag.retrieval == "hybrid"
+    monkeypatch.setenv("RAG_RETRIEVAL", "sparse")
+    with pytest.raises(ValidationError):
+        Settings()
 
 
 @pytest.mark.parametrize("value", ["-0.1", "1.5", "not-a-number"])

@@ -57,7 +57,7 @@ Ollama handles local generation and conversation. Hugging Face is only used for 
 
 CLI and TUI are two entry points over the same code: same training, matching, progress and provider modules. I didn't want to maintain the logic twice.
 
-The RAG tutor retrieves local material before answering, cites the chunks it used, and says so when nothing scores high enough instead of guessing. A corpus fingerprint avoids reindexing when nothing changed.
+The RAG tutor retrieves local material before answering, cites the chunks it used, and says so when nothing scores high enough instead of guessing. Hybrid search combines embedding similarity and Portuguese/English BM25 rankings with reciprocal rank fusion. A corpus fingerprint avoids reindexing when nothing changed.
 
 Progress, reports, conversations, cache and user-created content are kept separate from the versioned study material and ignored by Git.
 
@@ -153,6 +153,7 @@ ollama serve
 | `RAG_MODEL` | `gemma2:2b` | grounded tutor generation |
 | `RAG_EMBED_MODEL` | `embeddinggemma` | local document and query embeddings |
 | `RAG_MIN_SCORE` | `0.20` | minimum semantic retrieval score |
+| `RAG_RETRIEVAL` | `hybrid` | `hybrid` (dense + BM25) or `dense` |
 | `HF_TOKEN` | empty | optional text-generation fallback |
 | `HF_MODEL` | `gpt2` | Hugging Face model |
 | `AI_LOCAL_FALLBACK` | `0` | limited `to be` sentence examples |
@@ -185,7 +186,7 @@ The TUI is still concentrated in one module, which is the clearest candidate for
 ## Roadmap
 
 - Evaluate retrieval quality with Recall@K.
-- Compare dense retrieval with a hybrid dense/sparse search.
+- Continue tuning the relevance gate using the retrieval evaluation set.
 - Add integration tests for provider failures.
 - Validate versioned content against a schema.
 

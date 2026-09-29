@@ -11,7 +11,7 @@ from english_trainer.rag.chunking import build_knowledge_chunks
 from english_trainer.rag.index import KnowledgeIndex
 from english_trainer.rag.models import KnowledgeChunk, SearchHit
 from english_trainer.rag.prompts import learner_context, response_language
-from english_trainer.rag.retrieval import DenseRetriever, lexical_overlap_rerank
+from english_trainer.rag.retrieval import DenseRetriever, HybridRetriever, lexical_overlap_rerank
 from tests.fakes import FakeChatModel, OfflineChatModel
 
 
@@ -64,12 +64,17 @@ def _service(
     store: FakeStore | None = None,
     embedder: FakeEmbedder | None = None,
     min_score: float = 0.2,
+    hybrid: bool = False,
 ) -> RagService:
     embedder = embedder or FakeEmbedder()
     store = store or FakeStore()
     return RagService(
         index=KnowledgeIndex(embedder, store, tmp_path / "index"),
-        retriever=DenseRetriever(embedder, store, oversample=1),
+        retriever=(
+            HybridRetriever(embedder, store)
+            if hybrid
+            else DenseRetriever(embedder, store, oversample=1)
+        ),
         generator=generator,
         chunk_builder=lambda _content: chunks,
         config=RagConfig(min_score=min_score),
@@ -159,6 +164,29 @@ def test_low_scoring_material_is_refused(tmp_path: Path) -> None:
     with pytest.raises(RagError, match="relevant"):
         service.ask("What is the capital of France?", {}, {})
     assert model.calls == []
+
+
+def test_hybrid_service_uses_bm25_and_dense_gate(tmp_path: Path) -> None:
+    chunks = [_chunk("a", "Irrelevant material."), _chunk("b", "Explique o passado simples.")]
+    model = FakeChatModel(replies=["Use the simple past [S1]."])
+    service = _service(tmp_path, chunks, generator=model, hybrid=True)
+
+    answer = service.ask("Explique o passado simples", {}, {})
+
+    assert answer.sources[0].source == "notes/grammar.md"
+    assert isinstance(service.retriever, HybridRetriever)
+    assert service.retriever.retrieve("Explique o passado simples", limit=1)[0].chunk.id == "b"
+
+    low = _service(
+        tmp_path / "low",
+        chunks,
+        generator=FakeChatModel(),
+        store=FakeStore(score=0.1),
+        min_score=0.3,
+        hybrid=True,
+    )
+    with pytest.raises(RagError, match="relevant"):
+        low.ask("Explique o passado simples", {}, {})
 
 
 def test_generation_outage_is_reported(tmp_path: Path) -> None:

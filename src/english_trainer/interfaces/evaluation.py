@@ -17,7 +17,7 @@ from english_trainer.rag.embeddings import (
 )
 from english_trainer.rag.evaluation import EvalReport, evaluate, load_cases
 from english_trainer.rag.index import KnowledgeIndex
-from english_trainer.rag.retrieval import DenseRetriever
+from english_trainer.rag.retrieval import DenseRetriever, HybridRetriever
 from english_trainer.rag.vector_store import QdrantKnowledgeStore
 from english_trainer.storage.content import ContentRepository
 
@@ -27,6 +27,11 @@ DEFAULT_DATASET = Path("evals") / "rag_golden.jsonl"
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dataset", type=Path, help=f"JSONL gold set (default: {DEFAULT_DATASET})")
     parser.add_argument("-k", type=int, default=5, help="cut-off rank for hit@k and recall@k")
+    parser.add_argument(
+        "--retrieval",
+        choices=["dense", "hybrid"],
+        help="retrieval mode (default: RAG_RETRIEVAL, or hybrid)",
+    )
     parser.add_argument(
         "--embedder",
         choices=["ollama", "hashing"],
@@ -71,11 +76,21 @@ def run(args: argparse.Namespace, settings: Settings) -> int:
     try:
         KnowledgeIndex(embedder, store).sync(chunks, force=True)
         min_score = settings.rag.min_score if args.embedder == "ollama" else 0.0
+        mode = args.retrieval or settings.rag.retrieval
+        retriever = (
+            HybridRetriever(embedder, store)
+            if mode == "hybrid"
+            else DenseRetriever(embedder, store, oversample=1)
+        )
+        if isinstance(retriever, HybridRetriever):
+            retriever.set_chunks(chunks)
         report = evaluate(
-            DenseRetriever(embedder, store, oversample=1),
+            retriever,
             cases,
             k=args.k,
-            gate=lambda hits: any((hit.dense_score or 0.0) >= min_score for hit in hits),
+            gate=lambda hits: any(
+                hit.dense_score is not None and hit.dense_score >= min_score for hit in hits
+            ),
         )
     finally:
         store.close()
