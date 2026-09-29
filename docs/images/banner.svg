@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="400" viewBox="0 0 1600 400" role="img" aria-labelledby="title desc">
+  <title id="title">English Trainer AI</title>
+  <desc id="desc">Offline-first English trainer with a grounded local RAG tutor</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1020"/>
+      <stop offset="1" stop-color="#18112D"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#B8A0FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="400" fill="url(#background)"/>
+  <path d="M1110 0H1600V400H1240Z" fill="#8B5CF6" opacity=".055"/>
+  <circle cx="1445" cy="82" r="180" fill="none" stroke="#8B5CF6" stroke-width="2" opacity=".18"/>
+  <circle cx="1445" cy="82" r="120" fill="none" stroke="#8B5CF6" stroke-width="2" opacity=".12"/>
+  <rect x="88" y="74" width="8" height="178" rx="4" fill="url(#accent)"/>
+  <text x="128" y="166" fill="#F6F3FF" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="68" font-weight="700" letter-spacing="-1.5">English Trainer AI</text>
+  <text x="130" y="218" fill="#C9C3DB" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="27">Offline-first English trainer with a grounded local RAG tutor</text>
+  <line x1="130" y1="267" x2="1150" y2="267" stroke="#8B5CF6" stroke-width="2" opacity=".6"/>
+  <text x="130" y="314" fill="#B8A0FF" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="23" letter-spacing="1">Python  ·  Textual  ·  Qdrant  ·  Ollama  ·  RAG</text>
+</svg>
