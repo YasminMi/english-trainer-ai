@@ -7,7 +7,7 @@ from english_trainer.domain.matching import clean_text
 from english_trainer.domain.progress import register_conversation
 from english_trainer.interfaces.cli.io import ask, choose, header, pause
 from english_trainer.rag import RagError
-from english_trainer.services.coach import Verdict
+from english_trainer.services.coach import Tense, Verdict
 from english_trainer.services.writing import TOPICS, resolve_topic
 
 OLLAMA_HELP = (
@@ -33,7 +33,7 @@ def coach_menu(app: Application) -> None:
 
 def _generate_sentences(app: Application) -> None:
     header("Miu — Generate sentences")
-    tense = "past" if ask("Choose tense (present/past): ").lower() == "past" else "present"
+    tense: Tense = "past" if ask("Choose tense (present/past): ").lower() == "past" else "present"
     count = ask("How many sentences? (default 5): ")
     batch = app.coach.generate_sentences(tense, int(count) if count.isdigit() else 5)
     app.record_ai_use()

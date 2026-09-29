@@ -24,7 +24,7 @@ class ContentValidationError(ValueError):
 
 def validate_content(data: dict[str, Any]) -> Content:
     """Validate a content document against :class:`~english_trainer.domain.types.Content`."""
-    document = empty_content() | data  # type: ignore[operator]
+    document = {**empty_content(), **data}
     try:
         return _CONTENT_SCHEMA.validate_python(document, strict=True)
     except ValidationError as exc:

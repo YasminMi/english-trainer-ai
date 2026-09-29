@@ -18,9 +18,8 @@ class ResponseCache:
 
     def get(self, key: str) -> str | None:
         entry = read_json_object(self.path).get(key)
-        if isinstance(entry, dict) and isinstance(entry.get("text"), str):
-            return entry["text"]
-        return None
+        text = entry.get("text") if isinstance(entry, dict) else None
+        return text if isinstance(text, str) else None
 
     def put(self, key: str, text: str, *, provider: str) -> None:
         data = read_json_object(self.path)

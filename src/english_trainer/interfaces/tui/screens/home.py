@@ -12,6 +12,7 @@ from textual.containers import Container, Horizontal
 from textual.screen import Screen
 from textual.widgets import Button, Footer, ProgressBar, Rule, Static
 
+from english_trainer.domain.content import flashcard_categories
 from english_trainer.domain.progress import compute_overall
 from english_trainer.interfaces.tui.screens.assistant import (
     CoachScreen,
@@ -39,9 +40,7 @@ class HomeScreen(TrainerScreen):
 
     def _menu(self) -> list[tuple[str, str, Callable[[], Screen[None]]]]:
         content = self.trainer.content
-        flashcard_categories = [
-            str(c) for c in content["metadata"].get("flashcards_categories", []) or []
-        ]
+        categories = flashcard_categories(content)
         return [
             (
                 "1",
@@ -56,7 +55,7 @@ class HomeScreen(TrainerScreen):
                     content["flashcards"],
                     FlashcardPracticeScreen,
                     all_label="Todas as palavras",
-                    categories=flashcard_categories,
+                    categories=categories,
                 ),
             ),
             (

@@ -24,6 +24,12 @@ def merge_content(base: Content, extra: Mapping[str, Any]) -> None:
     base["dictionary"].update(extra.get("dictionary", {}))
 
 
+def flashcard_categories(content: Content) -> list[str]:
+    """Categories declared in ``metadata.flashcards_categories``, in menu order."""
+    declared = content["metadata"].get("flashcards_categories")
+    return [str(category) for category in declared] if isinstance(declared, list) else []
+
+
 def find_in_dictionary(content: Content, word: str) -> str | None:
     key = " ".join(clean_text(word).replace("/", " ").split())
     return content.get("dictionary", {}).get(key)

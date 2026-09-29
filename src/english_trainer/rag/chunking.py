@@ -156,10 +156,10 @@ def _chunks_from_sentences(
         for part, batch in enumerate(_batches(selected, group_size), start=1):
             lines = []
             for item in batch:
-                tags = ", ".join(str(tag) for tag in item.get("tags", []))
+                tag_text = ", ".join(str(tag) for tag in item.get("tags", []))
                 line = f"English: {item.get('en', '')}\nPortuguese: {item.get('pt', '')}"
-                if tags:
-                    line += f"\nTags: {tags}"
+                if tag_text:
+                    line += f"\nTags: {tag_text}"
                 lines.append(line)
             chunks.append(
                 _make_chunk(

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,6 +21,7 @@ from english_trainer.llm.ollama import OllamaClient
 from english_trainer.rag import RagService
 from english_trainer.rag.chunking import build_knowledge_chunks
 from english_trainer.rag.embeddings import OllamaEmbeddingClient
+from english_trainer.rag.models import KnowledgeChunk
 from english_trainer.services.coach import CoachService
 from english_trainer.services.conversation import ConversationSession
 from english_trainer.services.dictionary import OnlineDictionary
@@ -104,7 +106,7 @@ class Application:
             except LLMUnavailableError:
                 return None
 
-        def chunks(content: dict[str, Any]) -> Any:
+        def chunks(content: Mapping[str, Any]) -> list[KnowledgeChunk]:
             return build_knowledge_chunks(content, paths.notes_dir, paths.home)
 
         return RagService(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -47,7 +47,7 @@ class RagService:
         embedder: Embedder,
         index_dir: Path,
         generator: Callable[..., str | None],
-        chunk_builder: Callable[[dict[str, Any]], list[KnowledgeChunk]],
+        chunk_builder: Callable[[Mapping[str, Any]], list[KnowledgeChunk]],
         store: KnowledgeStore | None = None,
         min_score: float = 0.20,
         generation_model: str = "gemma2:2b",
@@ -67,7 +67,7 @@ class RagService:
         self.min_score = min_score
         self.manifest_path = index_dir / "manifest.json"
 
-    def prepare(self, content: dict[str, Any], force: bool = False) -> int:
+    def prepare(self, content: Mapping[str, Any], force: bool = False) -> int:
         chunks = self.chunk_builder(content)
         if not chunks:
             raise RagError("No study content was available for indexing.")
@@ -105,8 +105,8 @@ class RagService:
     def ask(
         self,
         question: str,
-        content: dict[str, Any],
-        progress: dict[str, Any],
+        content: Mapping[str, Any],
+        progress: Mapping[str, Any],
         *,
         force_reindex: bool = False,
         top_k: int = 2,
@@ -164,8 +164,8 @@ class RagService:
         self,
         question: str,
         hits: list[SearchHit],
-        content: dict[str, Any],
-        progress: dict[str, Any],
+        content: Mapping[str, Any],
+        progress: Mapping[str, Any],
     ) -> str:
         response_language = _response_language(question)
         context = "\n\n".join(
@@ -263,7 +263,7 @@ def _response_language(question: str) -> str:
     return "English"
 
 
-def _learner_context(content: dict[str, Any], progress: dict[str, Any]) -> str:
+def _learner_context(content: Mapping[str, Any], progress: Mapping[str, Any]) -> str:
     labels: dict[str, tuple[str, str]] = {}
     for item in content.get("sentences", []):
         labels[str(item.get("id", ""))] = ("sentence", str(item.get("en", "")))

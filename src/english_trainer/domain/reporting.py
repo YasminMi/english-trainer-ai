@@ -17,9 +17,11 @@ REPORT_DAYS = 7
 
 
 def _as_int(value: object) -> int:
+    if not isinstance(value, int | float | str):
+        return 0
     try:
-        return int(value or 0)  # type: ignore[call-overload]
-    except (TypeError, ValueError):
+        return int(value)
+    except ValueError:
         return 0
 
 

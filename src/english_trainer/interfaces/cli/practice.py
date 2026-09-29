@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from english_trainer.app import Application
-from english_trainer.domain.content import available_sources, filter_items, note_label
+from english_trainer.domain.content import (
+    available_sources,
+    filter_items,
+    flashcard_categories,
+    note_label,
+)
 from english_trainer.domain.hints import detect_tense_hint
 from english_trainer.domain.matching import is_close_answer, normalize_pt_phrase
 from english_trainer.domain.selection import item_key, weighted_choice
@@ -70,7 +75,7 @@ def run_to_be_trainer(app: Application) -> None:
 
 def flashcards_menu(app: Application) -> None:
     cards = app.content["flashcards"]
-    categories = [str(c) for c in app.content["metadata"].get("flashcards_categories", []) or []]
+    categories = flashcard_categories(app.content)
     options: list[tuple[str, tuple[str | None, str | None]]] = [("All words", (None, None))]
     options += [(f"{c.replace('_', ' ').capitalize()} only", (c, None)) for c in categories]
     options += [(f"Note: {note_label(n)}", (None, n)) for n in available_sources(cards)]
