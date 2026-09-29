@@ -6,7 +6,7 @@ import csv
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .data_access import DATA_DIR
 from .progress import compute_overall
@@ -25,7 +25,7 @@ def _safe_int(value: Any) -> int:
         return 0
 
 
-def build_weekly_report(progress: Dict[str, Any], when: Optional[date] = None) -> Dict[str, Any]:
+def build_weekly_report(progress: dict[str, Any], when: date | None = None) -> dict[str, Any]:
     day = when or date.today()
     start = day - timedelta(days=6)
     history = progress.get("daily", {}).get("history", {})
@@ -78,7 +78,7 @@ def build_weekly_report(progress: Dict[str, Any], when: Optional[date] = None) -
     }
 
 
-def format_weekly_report(report: Dict[str, Any]) -> str:
+def format_weekly_report(report: dict[str, Any]) -> str:
     lines = [
         "=== Weekly Study Report ===",
         f"Period: {report['period_start']} to {report['period_end']}",
@@ -99,7 +99,7 @@ def format_weekly_report(report: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def export_progress_snapshot(progress: Dict[str, Any], file_format: str = "json") -> Path:
+def export_progress_snapshot(progress: dict[str, Any], file_format: str = "json") -> Path:
     fmt = (file_format or "json").strip().lower()
     if fmt not in {"json", "csv"}:
         raise ValueError("file_format must be 'json' or 'csv'")

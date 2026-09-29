@@ -57,8 +57,6 @@ def run_rag_tutor(content: dict[str, Any], progress: dict[str, Any]) -> None:
         print("Sources:")
         for source in result.sources:
             print(
-                f"[{source.reference}] {source.source} — {source.title} "
-                f"(score {source.score:.3f})"
+                f"[{source.reference}] {source.source} — {source.title} (score {source.score:.3f})"
             )
         print(f"\nLocal index: {result.indexed_chunks} chunks\n")
-

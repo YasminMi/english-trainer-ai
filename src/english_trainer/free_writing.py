@@ -1,13 +1,12 @@
 """Free writing: write in English, get AI correction and explanation in Portuguese."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .hf_llm import generate_text
 from .progress import register_ai_use
 from .utils import clear_screen, pause, read_choice
 
-
-_TOPICS: List[str] = [
+_TOPICS: list[str] = [
     "your daily routine",
     "your favorite food",
     "your family",
@@ -37,7 +36,7 @@ def _prompt(text: str, topic: str) -> str:
     )
 
 
-def run_free_writing(progress: Dict[str, Any]) -> None:
+def run_free_writing(progress: dict[str, Any]) -> None:
     while True:
         clear_screen()
         print("=== Free Writing ===")
@@ -65,7 +64,7 @@ def run_free_writing(progress: Dict[str, Any]) -> None:
         print("Write 2-4 sentences in English.")
         print("Press ENTER on an empty line when done.\n")
 
-        lines: List[str] = []
+        lines: list[str] = []
         while len(lines) < 4:
             line = read_choice("").strip()
             if not line:

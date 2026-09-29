@@ -1,3 +1,5 @@
+import pytest
+
 from english_trainer.progress import (
     _update_item,
     compute_overall,
@@ -8,7 +10,6 @@ from english_trainer.progress import (
     register_sentence_result,
     set_daily_goal,
 )
-import pytest
 
 
 def test_update_item_adds_and_updates():

@@ -1,12 +1,13 @@
 """Free Dictionary API client (dictionaryapi.dev) — online fallback for local lookups."""
 
-from typing import Any, Dict, Optional
+from typing import Any
+
 import requests
 
 API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
 
 
-def fetch_dictionary_entry(word: str) -> Optional[Dict[str, Any]]:
+def fetch_dictionary_entry(word: str) -> dict[str, Any] | None:
     try:
         r: requests.Response = requests.get(API_URL.format(word=word), timeout=10)
         if r.status_code != 200:

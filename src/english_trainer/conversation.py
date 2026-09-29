@@ -1,4 +1,4 @@
-﻿"""
+"""
 Mode 6: Free Conversation with AI.
 
 - Chat freely in English with an AI conversation partner
@@ -9,10 +9,10 @@ Mode 6: Free Conversation with AI.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .hf_llm import generate_conversation_reply, OLLAMA_URL
-from .utils import clear_screen, read_choice, pause
+from .hf_llm import OLLAMA_URL, generate_conversation_reply
+from .utils import clear_screen, pause, read_choice
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 CONV_DIR = BASE_DIR / "data" / "conversations"
@@ -51,6 +51,7 @@ Rules:
 
 def _check_ollama() -> bool:
     import requests
+
     try:
         r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
         return r.status_code == 200
@@ -58,23 +59,23 @@ def _check_ollama() -> bool:
         return False
 
 
-def _get_error_review(history: List[Dict[str, str]]) -> Optional[str]:
+def _get_error_review(history: list[dict[str, str]]) -> str | None:
     """Ask the AI to review all user messages and list grammar mistakes."""
     user_messages = [m for m in history if m["role"] == "user"]
     if len(user_messages) < 2:
         return None
 
-    user_text = "\n".join(
-        f"Message {i+1}: {m['content']}"
-        for i, m in enumerate(user_messages)
-    )
+    user_text = "\n".join(f"Message {i + 1}: {m['content']}" for i, m in enumerate(user_messages))
     review_messages = [
-        {"role": "user", "content": f"Here are all my messages from our conversation:\n\n{user_text}\n\nPlease review my grammar."}
+        {
+            "role": "user",
+            "content": f"Here are all my messages from our conversation:\n\n{user_text}\n\nPlease review my grammar.",
+        }
     ]
     return generate_conversation_reply(review_messages, system_prompt=REVIEW_PROMPT)
 
 
-def _save_conversation(history: List[Dict[str, str]], review: Optional[str]) -> Path:
+def _save_conversation(history: list[dict[str, str]], review: str | None) -> Path:
     CONV_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
     path = CONV_DIR / f"conversation_{timestamp}.txt"
@@ -92,7 +93,7 @@ def _save_conversation(history: List[Dict[str, str]], review: Optional[str]) -> 
     return path
 
 
-def run_conversation(progress: Dict[str, Any]) -> None:
+def run_conversation(progress: dict[str, Any]) -> None:
     clear_screen()
     print("=== Conversation with Miu ===")
     print("Chat freely in English. Miu will correct your mistakes gently.")
@@ -110,7 +111,7 @@ def run_conversation(progress: Dict[str, Any]) -> None:
         pause()
         return
 
-    history: List[Dict[str, str]] = []
+    history: list[dict[str, str]] = []
 
     starter = generate_conversation_reply(
         [{"role": "user", "content": "Hello! Let's start a conversation to practice my English."}],
@@ -123,7 +124,9 @@ def run_conversation(progress: Dict[str, Any]) -> None:
         return
 
     print(f"Miu: {starter}\n")
-    history.append({"role": "user", "content": "Hello! Let's start a conversation to practice my English."})
+    history.append(
+        {"role": "user", "content": "Hello! Let's start a conversation to practice my English."}
+    )
     history.append({"role": "assistant", "content": starter})
 
     while True:
@@ -181,4 +184,3 @@ def run_conversation(progress: Dict[str, Any]) -> None:
     progress["conversation_turns"] = int(progress.get("conversation_turns", 0)) + turns
 
     pause()
-

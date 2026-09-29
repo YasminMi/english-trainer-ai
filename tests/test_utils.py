@@ -1,4 +1,9 @@
-from english_trainer.utils import is_close_answer, normalize_pt_phrase, _expand_slash_variations, _clean_text
+from english_trainer.utils import (
+    _clean_text,
+    _expand_slash_variations,
+    is_close_answer,
+    normalize_pt_phrase,
+)
 
 
 def test_clean_text_removes_punctuation_and_lowercases():
@@ -32,8 +37,12 @@ def test_is_close_answer_rejects_unrelated():
 
 
 def test_normalize_pt_phrase_fixes_legacy_to_be_negatives():
-    assert normalize_pt_phrase("Eles/Elas estavam não na cozinha.") == "Eles/Elas não estavam na cozinha."
+    assert (
+        normalize_pt_phrase("Eles/Elas estavam não na cozinha.")
+        == "Eles/Elas não estavam na cozinha."
+    )
     assert is_close_answer("eles não estavam na cozinha", "Eles/Elas estavam não na cozinha.")
+
 
 def test_is_close_answer_accepts_common_portuguese_contractions():
     assert is_close_answer("eu vou pro trabalho", "Eu vou para o trabalho.")

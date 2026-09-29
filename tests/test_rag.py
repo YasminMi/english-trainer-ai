@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from english_trainer.rag.chunking import build_knowledge_chunks
 from english_trainer.rag.models import KnowledgeChunk, SearchHit
 from english_trainer.rag.service import (
@@ -38,8 +36,18 @@ def test_chunk_builder_uses_markdown_and_deduplicates_explanations(tmp_path):
         ],
         "flashcards": [],
         "to_be_exercises": [
-            {"question": "She ___ ready.", "correct": "is", "pt": "Ela está pronta.", "explanation": "Use is with she."},
-            {"question": "He ___ ready.", "correct": "is", "pt": "Ele está pronto.", "explanation": "Use is with she."},
+            {
+                "question": "She ___ ready.",
+                "correct": "is",
+                "pt": "Ela está pronta.",
+                "explanation": "Use is with she.",
+            },
+            {
+                "question": "He ___ ready.",
+                "correct": "is",
+                "pt": "Ele está pronto.",
+                "explanation": "Use is with she.",
+            },
         ],
     }
 

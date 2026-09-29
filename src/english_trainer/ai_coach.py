@@ -1,13 +1,12 @@
-﻿"""Miu coach: generates level-appropriate sentences and explains mistakes in simple Portuguese."""
+"""Miu coach: generates level-appropriate sentences and explains mistakes in simple Portuguese."""
 
-from typing import Dict, Any, List
-import re
 import random
+import re
+from typing import Any
 
 from .hf_llm import generate_text
 from .progress import register_ai_use
-from .utils import clear_screen, pause, read_choice, _clean_text, is_close_answer
-
+from .utils import _clean_text, clear_screen, is_close_answer, pause, read_choice
 
 SYSTEM_STYLE = (
     "You are an English tutor for beginners. "
@@ -19,7 +18,7 @@ SYSTEM_STYLE = (
 )
 
 
-def _prompt_generate_sentences(targets: List[str], tense: str, n: int) -> str:
+def _prompt_generate_sentences(targets: list[str], tense: str, n: int) -> str:
     targets_str: str = ", ".join(targets)
     return (
         f"{SYSTEM_STYLE}\n"
@@ -49,8 +48,8 @@ def _prompt_explain_mistake(en_sentence: str, user_pt: str, expected_pt: str) ->
     )
 
 
-def _pick_targets() -> List[str]:
-    pools: List[List[str]] = [
+def _pick_targets() -> list[str]:
+    pools: list[list[str]] = [
         ["this", "that"],
         ["some", "how"],
         ["they", "we"],
@@ -60,15 +59,31 @@ def _pick_targets() -> List[str]:
     return random.choice(pools)
 
 
-def _fallback_sentences(targets: List[str], tense: str, n: int) -> List[str]:
-    nouns: List[str] = ["book", "ball", "cat", "dog", "car", "house"]
-    subjects: List[str] = ["I", "You", "We", "They", "He", "She", "It"]
-    be_present: Dict[str, str] = {"I": "am", "You": "are", "We": "are", "They": "are", "He": "is", "She": "is", "It": "is"}
-    be_past: Dict[str, str] = {"I": "was", "You": "were", "We": "were", "They": "were", "He": "was", "She": "was", "It": "was"}
-    be: Dict[str, str] = be_present if tense == "present" else be_past
+def _fallback_sentences(targets: list[str], tense: str, n: int) -> list[str]:
+    nouns: list[str] = ["book", "ball", "cat", "dog", "car", "house"]
+    subjects: list[str] = ["I", "You", "We", "They", "He", "She", "It"]
+    be_present: dict[str, str] = {
+        "I": "am",
+        "You": "are",
+        "We": "are",
+        "They": "are",
+        "He": "is",
+        "She": "is",
+        "It": "is",
+    }
+    be_past: dict[str, str] = {
+        "I": "was",
+        "You": "were",
+        "We": "were",
+        "They": "were",
+        "He": "was",
+        "She": "was",
+        "It": "was",
+    }
+    be: dict[str, str] = be_present if tense == "present" else be_past
 
-    out: List[str] = []
-    tset: List[str] = [t.lower() for t in targets]
+    out: list[str] = []
+    tset: list[str] = [t.lower() for t in targets]
 
     if "this" in tset:
         out.append("This is a " + random.choice(nouns) + ".")
@@ -93,7 +108,7 @@ def _fallback_sentences(targets: List[str], tense: str, n: int) -> List[str]:
 
 
 def _fallback_pt(en: str) -> str:
-    replacements: Dict[str, str] = {
+    replacements: dict[str, str] = {
         "This is a": "Isto é um/uma",
         "That is a": "Aquilo é um/uma",
         "These are some": "Estas são algumas",
@@ -112,7 +127,7 @@ def _fallback_pt(en: str) -> str:
     return "Tradução simples."
 
 
-def _strip_think_tags(lines: List[str]) -> List[str]:
+def _strip_think_tags(lines: list[str]) -> list[str]:
     result = []
     skip = False
     for ln in lines:
@@ -134,7 +149,7 @@ def _is_valid_sentence(s: str) -> bool:
     return len(words) >= 2 and bool(re.search(r"\b(am|is|are|was|were)\b", s.lower()))
 
 
-def run_ai_coach(content: Dict[str, Any], progress: Dict[str, Any]) -> None:
+def run_ai_coach(content: dict[str, Any], progress: dict[str, Any]) -> None:
     while True:
         clear_screen()
         print("=== Miu — AI Coach ===")
@@ -154,21 +169,21 @@ def run_ai_coach(content: Dict[str, Any], progress: Dict[str, Any]) -> None:
             pause()
 
 
-def _ai_generate_sentences(progress: Dict[str, Any]) -> None:
+def _ai_generate_sentences(progress: dict[str, Any]) -> None:
     clear_screen()
     print("AI will generate sentences for beginners.")
     tense: str = read_choice("Choose tense (present/past): ").lower().strip()
     if tense not in ("present", "past"):
         tense = "present"
 
-    targets: List[str] = _pick_targets()
+    targets: list[str] = _pick_targets()
     n_str: str = read_choice("How many sentences? (default 5): ").strip()
     try:
         n: int = max(1, min(int(n_str) if n_str else 5, 12))
     except ValueError:
         n = 5
 
-    def _parse(text: str | None) -> List[str]:
+    def _parse(text: str | None) -> list[str]:
         if not text:
             return []
         raw = [ln.strip() for ln in text.splitlines() if ln.strip()]
@@ -195,7 +210,7 @@ def _ai_generate_sentences(progress: Dict[str, Any]) -> None:
         print("Limited built-in examples: no AI model evaluated this output.\n")
     didactic = []
     for ln in lines:
-        parts: List[str] = [p.strip() for p in ln.split("|")]
+        parts: list[str] = [p.strip() for p in ln.split("|")]
         if len(parts) == 3 and all(parts):
             en, pt, tip = parts
             en = re.split(r"[.!?]", en)[0].strip()
@@ -222,7 +237,7 @@ def _ai_generate_sentences(progress: Dict[str, Any]) -> None:
     pause()
 
 
-def _ai_check_translation(content: Dict[str, Any], progress: Dict[str, Any]) -> None:
+def _ai_check_translation(content: dict[str, Any], progress: dict[str, Any]) -> None:
     clear_screen()
     print("Type an English sentence you are training (or choose from your list).")
     en: str = read_choice("EN sentence: ")
@@ -237,7 +252,9 @@ def _ai_check_translation(content: Dict[str, Any], progress: Dict[str, Any]) -> 
             break
 
     if not expected_pt:
-        expected_pt = read_choice("Expected PT (optional, press ENTER to skip): ").strip() or "(not provided)"
+        expected_pt = (
+            read_choice("Expected PT (optional, press ENTER to skip): ").strip() or "(not provided)"
+        )
 
     if expected_pt != "(not provided)" and is_close_answer(user_pt, expected_pt):
         print("✅ Acceptable (local check).")
@@ -260,4 +277,3 @@ def _ai_check_translation(content: Dict[str, Any], progress: Dict[str, Any]) -> 
     print(text.strip())
     print("-------------------")
     pause()
-

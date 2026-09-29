@@ -4,7 +4,7 @@ import os
 import platform
 import re
 import unicodedata
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def clear_screen() -> None:
@@ -52,7 +52,7 @@ def normalize_pt_phrase(text: str) -> str:
 
 def _normalize_pt_synonyms(text: str) -> str:
     # existential há/existe → tem  ("há um cachorro" = "tem um cachorro")
-    text = re.sub(r"\bha\b", "tem", text)          # "há" after accent strip → "ha"
+    text = re.sub(r"\bha\b", "tem", text)  # "há" after accent strip → "ha"
     text = re.sub(r"\bexistem\b", "tem", text)
     text = re.sub(r"\bexiste\b", "tem", text)
     # optional leading subject pronoun (PT-BR commonly drops it)
@@ -65,9 +65,9 @@ def _normalize_pt_synonyms(text: str) -> str:
 def _normalize_matching_text(text: str) -> str:
     normalized = _clean_text(text)
     normalized = normalize_pt_phrase(normalized)
-    normalized = _strip_accents(normalized)          # é→e, ã→a, ê→e …
+    normalized = _strip_accents(normalized)  # é→e, ã→a, ê→e …
     normalized = re.sub(r"\bpra\b", "para", normalized)
-    normalized = re.sub(r"\bpro\b", "para o",  normalized)
+    normalized = re.sub(r"\bpro\b", "para o", normalized)
     normalized = re.sub(r"\bpras\b", "para as", normalized)
     normalized = re.sub(r"\bpros\b", "para os", normalized)
     normalized = re.sub(r"\bpara\s+(a|o|as|os)\b", "para", normalized)
@@ -153,7 +153,11 @@ def is_close_answer(user_answer: str, expected: str | list[str], strict: bool = 
         ex_normalized = _normalize_matching_text(ex)
         if ua_simple == ex or ua_normalized == ex_normalized:
             return True
-        if not strict and (len(ua_normalized) >= 4 or len(ua_tokens) >= 2) and _is_phrase_subset(ua_normalized, ex_normalized):
+        if (
+            not strict
+            and (len(ua_normalized) >= 4 or len(ua_tokens) >= 2)
+            and _is_phrase_subset(ua_normalized, ex_normalized)
+        ):
             return True
     return False
 

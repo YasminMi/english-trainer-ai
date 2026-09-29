@@ -6,9 +6,10 @@ Design choices:
   Flashcards — Split layout: word card (left) + item stats (right)
   Conversation — Classic terminal, [Miu] green / [You] white
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich.markup import escape
 from textual import on, work
@@ -20,30 +21,31 @@ from textual.widgets import (
     Button,
     Footer,
     Input,
-    Label,
     ProgressBar,
     RichLog,
     Rule,
     Static,
 )
 
-from .data_access import load_content, load_progress, save_progress, find_in_dictionary
+from .conversation import SYSTEM_PROMPT, _check_ollama, _get_error_review, _save_conversation
+from .data_access import find_in_dictionary, load_content, load_progress, save_progress
 from .dictionary_api import fetch_dictionary_entry
+from .flashcards import _filter as _fc_filter
+from .flashcards import _weighted_choice as _w_card
+from .hf_llm import DEFAULT_MODEL, generate_conversation_reply, generate_text
 from .progress import (
     compute_overall,
+    register_ai_use,
+    register_dictionary_lookup,
     register_flashcard_result,
     register_sentence_result,
     register_to_be_result,
-    register_dictionary_lookup,
-    register_ai_use,
 )
 from .rag import RagService
-from .training import _weighted_choice as _w_sentence, _detect_tense_hint
-from .flashcards import _filter as _fc_filter, _weighted_choice as _w_card
 from .to_be_trainer import _weighted_choice as _w_to_be
+from .training import _detect_tense_hint
+from .training import _weighted_choice as _w_sentence
 from .utils import is_close_answer, normalize_pt_phrase
-from .hf_llm import generate_conversation_reply, DEFAULT_MODEL, generate_text
-from .conversation import SYSTEM_PROMPT, _check_ollama, _get_error_review, _save_conversation
 
 # CSS
 
@@ -182,6 +184,7 @@ ProgressBar > .bar--complete { color: #3fb950; }
 
 # HOME
 
+
 class HomeScreen(Screen):
     BINDINGS = [
         Binding("1", "nav_1", "", show=False),
@@ -216,16 +219,36 @@ class HomeScreen(Screen):
         yield ProgressBar(total=100, show_percentage=False, id="home-pb")
 
         with Container(id="menu-wrap"):
-            yield Button(f"  1   To Be Trainer          {n_e} exercícios", id="b1", classes="menu-btn")
+            yield Button(
+                f"  1   To Be Trainer          {n_e} exercícios", id="b1", classes="menu-btn"
+            )
             yield Button(f"  2   Flashcards              {n_c} cards", id="b2", classes="menu-btn")
-            yield Button(f"  3   Sentence Training        {n_s} frases", id="b3", classes="menu-btn")
-            yield Button(f"  4   Dictionary               local + online", id="b4", classes="menu-btn")
-            yield Button(f"  5   Miu — AI Coach           gerar frases / corrigir", id="b5", classes="menu-btn")
-            yield Button(f"  6   Conversation with Miu ★  conversar em inglês", id="b6", classes="menu-btn")
-            yield Button(f"  7   Progress                 estatísticas", id="b7", classes="menu-btn")
-            yield Button(f"  8   Dictation  🎵             ouça e escreva", id="b8", classes="menu-btn")
-            yield Button(f"  9   Free Writing  ✏           escreva com correção da IA", id="b9", classes="menu-btn")
-            yield Button("  R   Miu Grounded Tutor       RAG local com fontes", id="brag", classes="menu-btn")
+            yield Button(
+                f"  3   Sentence Training        {n_s} frases", id="b3", classes="menu-btn"
+            )
+            yield Button(
+                "  4   Dictionary               local + online", id="b4", classes="menu-btn"
+            )
+            yield Button(
+                "  5   Miu — AI Coach           gerar frases / corrigir",
+                id="b5",
+                classes="menu-btn",
+            )
+            yield Button(
+                "  6   Conversation with Miu ★  conversar em inglês", id="b6", classes="menu-btn"
+            )
+            yield Button("  7   Progress                 estatísticas", id="b7", classes="menu-btn")
+            yield Button(
+                "  8   Dictation  🎵             ouça e escreva", id="b8", classes="menu-btn"
+            )
+            yield Button(
+                "  9   Free Writing  ✏           escreva com correção da IA",
+                id="b9",
+                classes="menu-btn",
+            )
+            yield Button(
+                "  R   Miu Grounded Tutor       RAG local com fontes", id="brag", classes="menu-btn"
+            )
 
         yield Footer()
 
@@ -242,30 +265,51 @@ class HomeScreen(Screen):
             pass
 
     @on(Button.Pressed, "#b1")
-    def action_nav_1(self) -> None: self.app.push_screen(ToBeScreen())
+    def action_nav_1(self) -> None:
+        self.app.push_screen(ToBeScreen())
+
     @on(Button.Pressed, "#b2")
-    def action_nav_2(self) -> None: self.app.push_screen(FlashcardMenuScreen())
+    def action_nav_2(self) -> None:
+        self.app.push_screen(FlashcardMenuScreen())
+
     @on(Button.Pressed, "#b3")
-    def action_nav_3(self) -> None: self.app.push_screen(SentenceMenuScreen())
+    def action_nav_3(self) -> None:
+        self.app.push_screen(SentenceMenuScreen())
+
     @on(Button.Pressed, "#b4")
-    def action_nav_4(self) -> None: self.app.push_screen(DictionaryScreen())
+    def action_nav_4(self) -> None:
+        self.app.push_screen(DictionaryScreen())
+
     @on(Button.Pressed, "#b5")
-    def action_nav_5(self) -> None: self.app.push_screen(AICoachScreen())
+    def action_nav_5(self) -> None:
+        self.app.push_screen(AICoachScreen())
+
     @on(Button.Pressed, "#b6")
-    def action_nav_6(self) -> None: self.app.push_screen(ConversationScreen())
+    def action_nav_6(self) -> None:
+        self.app.push_screen(ConversationScreen())
+
     @on(Button.Pressed, "#b7")
-    def action_nav_7(self) -> None: self.app.push_screen(ProgressScreen())
+    def action_nav_7(self) -> None:
+        self.app.push_screen(ProgressScreen())
+
     @on(Button.Pressed, "#b8")
-    def action_nav_8(self) -> None: self.app.push_screen(DictationMenuScreen())
+    def action_nav_8(self) -> None:
+        self.app.push_screen(DictationMenuScreen())
+
     @on(Button.Pressed, "#b9")
-    def action_nav_9(self) -> None: self.app.push_screen(FreeWritingScreen())
+    def action_nav_9(self) -> None:
+        self.app.push_screen(FreeWritingScreen())
+
     @on(Button.Pressed, "#brag")
-    def action_nav_rag(self) -> None: self.app.push_screen(RagTutorScreen())
+    def action_nav_rag(self) -> None:
+        self.app.push_screen(RagTutorScreen())
 
     def action_quit_app(self) -> None:
         self.app.exit()
 
+
 # FLASHCARD — menu
+
 
 class FlashcardMenuScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
@@ -281,11 +325,13 @@ class FlashcardMenuScreen(Screen):
             yield Button(f"  Todas as palavras  ({len(cards)} total)", id="all", classes="menu-btn")
             for cat in categories:
                 n = sum(1 for c in cards if c.get("category") == cat)
-                yield Button(f"  {cat.replace('_',' ').title()}  ({n})", id=f"c_{cat}", classes="menu-btn")
+                yield Button(
+                    f"  {cat.replace('_', ' ').title()}  ({n})", id=f"c_{cat}", classes="menu-btn"
+                )
             if notes:
                 yield Static("  — Notas Markdown —", classes="muted")
                 for i, note in enumerate(notes):
-                    lbl = note.split("/")[-1].replace(".md","").replace("_"," ").title()
+                    lbl = note.split("/")[-1].replace(".md", "").replace("_", " ").title()
                     n = sum(1 for c in cards if c.get("source_note") == note)
                     yield Button(f"  {lbl}  ({n})", id=f"n_{i}", classes="menu-btn")
         yield Footer()
@@ -304,24 +350,26 @@ class FlashcardMenuScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # FLASHCARD — practice (split layout)
+
 
 class FlashcardPracticeScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
 
-    def __init__(self, category: Optional[str], source_note: Optional[str]):
+    def __init__(self, category: str | None, source_note: str | None):
         super().__init__()
         self._category = category
         self._source_note = source_note
-        self._card: Dict[str, Any] = {}
+        self._card: dict[str, Any] = {}
         self._sess_ok = 0
         self._sess_total = 0
         self._feedback_mode = False
 
     def _label(self) -> str:
         if self._source_note:
-            return self._source_note.split("/")[-1].replace(".md","").replace("_"," ").title()
-        return self._category.replace("_"," ").title() if self._category else "Todos"
+            return self._source_note.split("/")[-1].replace(".md", "").replace("_", " ").title()
+        return self._category.replace("_", " ").title() if self._category else "Todos"
 
     def compose(self) -> ComposeResult:
         yield Static(f"  ◆  FLASHCARDS — {self._label()}", classes="sec-header")
@@ -355,7 +403,7 @@ class FlashcardPracticeScreen(Screen):
         self._card = _w_card(filtered, prog, progress=self.app.progress)  # type: ignore[attr-defined]
         en = self._card.get("en", "")
         cat = self._card.get("category") or (
-            self._card.get("source_note","").split("/")[-1].replace(".md","")
+            self._card.get("source_note", "").split("/")[-1].replace(".md", "")
         )
         self.query_one("#fc-word", Static).update(f"[bold]{en}[/bold]")
         self.query_one("#fc-category", Static).update(f"[dim]Categoria: {cat}[/dim]")
@@ -417,7 +465,9 @@ class FlashcardPracticeScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # SENTENCE TRAINING — menu
+
 
 class SentenceMenuScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
@@ -427,9 +477,11 @@ class SentenceMenuScreen(Screen):
         notes = sorted({s.get("source_note") for s in sentences if s.get("source_note")})
         yield Static("  ◆  SENTENCE TRAINING — Escolha um tópico", classes="sec-header")
         with Container(id="menu-wrap"):
-            yield Button(f"  Todas as frases  ({len(sentences)} total)", id="all", classes="menu-btn")
+            yield Button(
+                f"  Todas as frases  ({len(sentences)} total)", id="all", classes="menu-btn"
+            )
             for i, note in enumerate(notes):
-                lbl = note.split("/")[-1].replace(".md","").replace("_"," ").title()
+                lbl = note.split("/")[-1].replace(".md", "").replace("_", " ").title()
                 n = sum(1 for s in sentences if s.get("source_note") == note)
                 yield Button(f"  {lbl}  ({n})", id=f"n_{i}", classes="menu-btn")
         yield Footer()
@@ -446,22 +498,24 @@ class SentenceMenuScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # SENTENCE TRAINING — practice
+
 
 class SentencePracticeScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
 
-    def __init__(self, source_note: Optional[str]):
+    def __init__(self, source_note: str | None):
         super().__init__()
         self._source_note = source_note
-        self._sent: Dict[str, Any] = {}
+        self._sent: dict[str, Any] = {}
         self._sess_ok = 0
         self._sess_total = 0
         self._feedback_mode = False
 
     def _label(self) -> str:
         if self._source_note:
-            return self._source_note.split("/")[-1].replace(".md","").replace("_"," ").title()
+            return self._source_note.split("/")[-1].replace(".md", "").replace("_", " ").title()
         return "Todas as frases"
 
     def compose(self) -> ComposeResult:
@@ -469,10 +523,16 @@ class SentencePracticeScreen(Screen):
         with Container(id="st-wrap"):
             yield Static("[dim]Sessão: 0/0[/dim]", id="st-session")
             yield Static("", id="st-sentence")
-            yield Static("[dim]Traduz para Português OU repete a frase em Inglês[/dim]", classes="muted")
+            yield Static(
+                "[dim]Traduz para Português OU repete a frase em Inglês[/dim]", classes="muted"
+            )
             yield Input(placeholder="Sua resposta...", id="st-input")
             yield Static("", id="st-feedback")
-            yield Button("  ✓  Minha resposta está correta", id="st-override", classes="menu-btn override-btn hidden")
+            yield Button(
+                "  ✓  Minha resposta está correta",
+                id="st-override",
+                classes="menu-btn override-btn hidden",
+            )
         yield Footer()
 
     def on_mount(self) -> None:
@@ -549,15 +609,17 @@ class SentencePracticeScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # TO BE TRAINER
+
 
 class ToBeScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
 
     def __init__(self):
         super().__init__()
-        self._ex: Dict[str, Any] = {}
-        self._opts: List[str] = []
+        self._ex: dict[str, Any] = {}
+        self._opts: list[str] = []
         self._sess_ok = 0
         self._sess_total = 0
         self._feedback_mode = False
@@ -581,7 +643,9 @@ class ToBeScreen(Screen):
     def _next(self) -> None:
         exercises = self.app.content.get("to_be_exercises", [])  # type: ignore[attr-defined]
         if not exercises:
-            self.query_one("#tobe-question", Static).update("[red]Nenhum exercício encontrado.[/red]")
+            self.query_one("#tobe-question", Static).update(
+                "[red]Nenhum exercício encontrado.[/red]"
+            )
             return
         self._ex = _w_to_be(exercises, self.app.progress)  # type: ignore[attr-defined]
         self._opts = self._ex.get("options", [])
@@ -628,7 +692,7 @@ class ToBeScreen(Screen):
         self._sess_total += 1
         if correct:
             self._sess_ok += 1
-            fb = f"[green]✓ Correto![/green]"
+            fb = "[green]✓ Correto![/green]"
         else:
             fb = f"[red]✗  Correto: [bold]{correct_ans}[/bold][/red]"
         if expl:
@@ -641,7 +705,9 @@ class ToBeScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # DICTIONARY
+
 
 class DictionaryScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
@@ -649,7 +715,9 @@ class DictionaryScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Static("  ◆  DICTIONARY — local + online", classes="sec-header")
         with Container(id="dict-wrap"):
-            yield Static("[dim]Digite uma palavra em inglês e pressione Enter.[/dim]", classes="muted")
+            yield Static(
+                "[dim]Digite uma palavra em inglês e pressione Enter.[/dim]", classes="muted"
+            )
             yield Input(placeholder="Ex: happy, tired, work...", id="dict-input")
             yield Static("[dim]Aguardando...[/dim]", id="dict-result")
         yield Footer()
@@ -692,6 +760,7 @@ class DictionaryScreen(Screen):
                 result = "\n".join(lines)
             else:
                 import difflib
+
                 d = content.get("dictionary", {})
                 close = difflib.get_close_matches(word.lower(), d.keys(), n=3, cutoff=0.6)
                 if close:
@@ -705,7 +774,9 @@ class DictionaryScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # AI COACH
+
 
 class AICoachScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
@@ -734,13 +805,20 @@ class AICoachScreen(Screen):
 
     @work(thread=True)
     def _do_generate(self, tense: str) -> None:
-        from .ai_coach import _pick_targets, _prompt_generate_sentences, _fallback_sentences, _fallback_pt
         import re
+
+        from .ai_coach import (
+            _fallback_pt,
+            _fallback_sentences,
+            _pick_targets,
+            _prompt_generate_sentences,
+        )
+
         targets = _pick_targets()
         prompt = _prompt_generate_sentences(targets, tense, 5)
         text = generate_text(prompt, max_new_tokens=220)
 
-        lines: List[str] = []
+        lines: list[str] = []
         if text:
             for ln in text.splitlines():
                 ln = ln.strip()
@@ -758,7 +836,9 @@ class AICoachScreen(Screen):
         for ln in lines[:5]:
             parts = [p.strip() for p in ln.split("|")]
             if len(parts) >= 2:
-                output_parts.append(f"[bold][yellow]{parts[0]}[/yellow][/bold]\n  [dim]PT:[/dim] {parts[1]}")
+                output_parts.append(
+                    f"[bold][yellow]{parts[0]}[/yellow][/bold]\n  [dim]PT:[/dim] {parts[1]}"
+                )
             else:
                 output_parts.append(f"[bold][yellow]{ln}[/yellow][/bold]")
 
@@ -773,7 +853,9 @@ class AICoachScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # CONVERSATION — classic terminal, [Miu] green / [You] white
+
 
 class ConversationScreen(Screen):
     BINDINGS = [
@@ -783,7 +865,7 @@ class ConversationScreen(Screen):
 
     def __init__(self):
         super().__init__()
-        self._history: List[Dict[str, str]] = []
+        self._history: list[dict[str, str]] = []
         self._busy = False
         self._turns = 0
         self._reviewing = False
@@ -810,10 +892,12 @@ class ConversationScreen(Screen):
         self._set_busy(True)
         self._do_greet()
 
-
     @work(thread=True)
     def _do_greet(self) -> None:
-        first_msg = {"role": "user", "content": "Hello! Let's start a conversation to practice my English."}
+        first_msg = {
+            "role": "user",
+            "content": "Hello! Let's start a conversation to practice my English.",
+        }
         reply = generate_conversation_reply([first_msg], system_prompt=SYSTEM_PROMPT)
         self._history.append(first_msg)
         if reply:
@@ -836,7 +920,9 @@ class ConversationScreen(Screen):
     @work(thread=True)
     def _do_review(self) -> None:
         self.app.call_from_thread(self._write, "sep", "─" * 44)
-        self.app.call_from_thread(self._write, "sep", f"Conversa encerrada — {self._turns} mensagens.")
+        self.app.call_from_thread(
+            self._write, "sep", f"Conversa encerrada — {self._turns} mensagens."
+        )
         self.app.call_from_thread(self._write, "sep", "Analisando erros gramaticais...")
         review = _get_error_review(self._history)
         self.app.call_from_thread(self._write, "sep", "─── Grammar Review ───")
@@ -847,16 +933,19 @@ class ConversationScreen(Screen):
         else:
             self.app.call_from_thread(self._write, "sep", "(Sem resposta da IA para a revisão.)")
         self.app.call_from_thread(self._write, "sep", "─" * 44)
-        self.app.progress["conversation_sessions"] = int(self.app.progress.get("conversation_sessions", 0)) + 1  # type: ignore[attr-defined]
-        self.app.progress["conversation_turns"] = int(self.app.progress.get("conversation_turns", 0)) + self._turns  # type: ignore[attr-defined]
+        self.app.progress["conversation_sessions"] = (
+            int(self.app.progress.get("conversation_sessions", 0)) + 1
+        )  # type: ignore[attr-defined]
+        self.app.progress["conversation_turns"] = (
+            int(self.app.progress.get("conversation_turns", 0)) + self._turns
+        )  # type: ignore[attr-defined]
         save_progress(self.app.progress)  # type: ignore[attr-defined]
         self._reviewing = False
         self._turns = 0
         self.app.call_from_thread(
             self.query_one("#conv-status", Static).update,
-            "[dim]Pressione Esc para voltar ao menu.[/dim]"
+            "[dim]Pressione Esc para voltar ao menu.[/dim]",
         )
-
 
     def _write(self, role: str, text: str) -> None:
         log = self.query_one("#conv-log", RichLog)
@@ -880,7 +969,6 @@ class ConversationScreen(Screen):
         else:
             status.update("")
             inp.focus()
-
 
     @on(Input.Submitted, "#conv-input")
     def on_message(self, event: Input.Submitted) -> None:
@@ -911,7 +999,9 @@ class ConversationScreen(Screen):
             path = _save_conversation(self._history, None)
             self._write("sep", f"Salvo em: {path.name}")
 
+
 # PROGRESS
+
 
 class ProgressScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
@@ -932,8 +1022,8 @@ class ProgressScreen(Screen):
 
             modes = [
                 ("To Be Trainer", stats["to_be_seen"], stats["to_be_correct"]),
-                ("Flashcards",    stats["flashcards_seen"], stats["flashcards_correct"]),
-                ("Sentences",     stats["sentences_seen"], stats["sentences_correct"]),
+                ("Flashcards", stats["flashcards_seen"], stats["flashcards_correct"]),
+                ("Sentences", stats["sentences_seen"], stats["sentences_correct"]),
             ]
             for name, seen, correct in modes:
                 acc = correct / seen * 100 if seen > 0 else 0
@@ -948,7 +1038,9 @@ class ProgressScreen(Screen):
             conv_s = int(prog.get("conversation_sessions", 0))
             conv_t = int(prog.get("conversation_turns", 0))
             if conv_s > 0:
-                yield Static(f"[dim]Conversations:[/dim]       {conv_s} sessões, {conv_t} mensagens")
+                yield Static(
+                    f"[dim]Conversations:[/dim]       {conv_s} sessões, {conv_t} mensagens"
+                )
 
         yield Footer()
 
@@ -965,7 +1057,9 @@ class ProgressScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # DICTATION — menu
+
 
 class DictationMenuScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
@@ -975,7 +1069,9 @@ class DictationMenuScreen(Screen):
         notes = sorted({s.get("source_note") for s in sentences if s.get("source_note")})
         yield Static("  ◆  DICTATION — Ouça e escreva em inglês", classes="sec-header")
         with Container(id="menu-wrap"):
-            yield Button(f"  Todas as frases  ({len(sentences)} total)", id="all", classes="menu-btn")
+            yield Button(
+                f"  Todas as frases  ({len(sentences)} total)", id="all", classes="menu-btn"
+            )
             for i, note in enumerate(notes):
                 lbl = note.split("/")[-1].replace(".md", "").replace("_", " ").title()
                 n = sum(1 for s in sentences if s.get("source_note") == note)
@@ -994,15 +1090,17 @@ class DictationMenuScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # DICTATION — practice
+
 
 class DictationPracticeScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
 
-    def __init__(self, source_note: Optional[str]):
+    def __init__(self, source_note: str | None):
         super().__init__()
         self._source_note = source_note
-        self._sent: Dict[str, Any] = {}
+        self._sent: dict[str, Any] = {}
         self._sess_ok = 0
         self._sess_total = 0
         self._feedback_mode = False
@@ -1037,7 +1135,9 @@ class DictationPracticeScreen(Screen):
             return
         prog = self.app.progress.get("sentences", {})  # type: ignore[attr-defined]
         self._sent = _w_sentence(sentences, prog, progress=self.app.progress)  # type: ignore[attr-defined]
-        self.query_one("#dt-status", Static).update("🎵  [yellow]Playing audio...[/yellow]  (aguarde)")
+        self.query_one("#dt-status", Static).update(
+            "🎵  [yellow]Playing audio...[/yellow]  (aguarde)"
+        )
         self.query_one("#dt-feedback", Static).update("")
         inp = self.query_one("#dt-input", Input)
         inp.clear()
@@ -1049,6 +1149,7 @@ class DictationPracticeScreen(Screen):
     @on(Button.Pressed, "#dt-speed")
     def on_toggle_speed(self) -> None:
         from .audio import RATE_NORMAL, RATE_SLOW
+
         if self._rate == RATE_NORMAL:
             self._rate = RATE_SLOW
             self.query_one("#dt-speed", Button).label = "  🐢  Velocidade: Devagar"
@@ -1058,7 +1159,8 @@ class DictationPracticeScreen(Screen):
 
     @work(thread=True)
     def _play_audio(self) -> None:
-        from .audio import speak, audio_available
+        from .audio import audio_available, speak
+
         en = self._sent.get("en", "")
         success = speak(en, rate=self._rate) if audio_available() else False
 
@@ -1126,12 +1228,14 @@ class DictationPracticeScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # FREE WRITING
+
 
 class FreeWritingScreen(Screen):
     BINDINGS = [Binding("escape,q", "back", "Voltar")]
 
-    _TOPICS: List[str] = [
+    _TOPICS: list[str] = [
         "your daily routine",
         "your favorite food",
         "your family",
@@ -1193,13 +1297,18 @@ class FreeWritingScreen(Screen):
     @work(thread=True)
     def _do_check(self, text: str, topic: str) -> None:
         from .free_writing import _prompt
+
         response = generate_text(_prompt(text, topic), max_new_tokens=400)
         register_ai_use(self.app.progress)  # type: ignore[attr-defined]
         save_progress(self.app.progress)  # type: ignore[attr-defined]
 
-        feedback = escape(response.strip()) if response else (
-            "[red]IA indisponível.[/red] Nenhuma avaliação foi realizada.\n"
-            "[dim]Verifique a configuração do Ollama ou do Hugging Face.[/dim]"
+        feedback = (
+            escape(response.strip())
+            if response
+            else (
+                "[red]IA indisponível.[/red] Nenhuma avaliação foi realizada.\n"
+                "[dim]Verifique a configuração do Ollama ou do Hugging Face.[/dim]"
+            )
         )
 
         def _update() -> None:
@@ -1214,7 +1323,9 @@ class FreeWritingScreen(Screen):
     def action_back(self) -> None:
         self.app.pop_screen()
 
+
 # GROUNDED TUTOR
+
 
 class RagTutorScreen(Screen):
     BINDINGS = [Binding("escape", "back", "Voltar")]
@@ -1231,7 +1342,9 @@ class RagTutorScreen(Screen):
                 "A resposta mostrará as fontes recuperadas.",
                 markup=False,
             )
-            yield Input(placeholder="Ex.: Por que 'She don't like coffee' está errado?", id="rag-input")
+            yield Input(
+                placeholder="Ex.: Por que 'She don't like coffee' está errado?", id="rag-input"
+            )
             yield Static("", id="rag-status", markup=False)
             yield Static("", id="rag-answer", markup=False)
             yield Static("", id="rag-sources", markup=False)
@@ -1298,7 +1411,10 @@ class RagTutorScreen(Screen):
 
     def action_back(self) -> None:
         self.app.pop_screen()
+
+
 # APP
+
 
 class EnglishTrainerApp(App):
     CSS = APP_CSS
@@ -1306,8 +1422,8 @@ class EnglishTrainerApp(App):
 
     def __init__(self) -> None:
         super().__init__()
-        self.content: Dict[str, Any] = {}
-        self.progress: Dict[str, Any] = {}
+        self.content: dict[str, Any] = {}
+        self.progress: dict[str, Any] = {}
 
     def on_mount(self) -> None:
         self.content = load_content()
@@ -1320,4 +1436,3 @@ class EnglishTrainerApp(App):
 
 def run_tui() -> None:
     EnglishTrainerApp().run()
-

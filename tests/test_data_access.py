@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from english_trainer import data_access

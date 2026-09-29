@@ -5,12 +5,10 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-from typing import Optional
 
 import requests
 
 from .data_access import load_ai_cache, save_ai_cache
-
 
 DEFAULT_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2").strip() or "llama3.2"
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434").strip() or "http://localhost:11434"
@@ -26,18 +24,18 @@ def _use_local_fallback() -> bool:
 
 
 def _cache_key(model: str, prompt: str) -> str:
-    value = f"{model}\n{prompt}".encode("utf-8")
+    value = f"{model}\n{prompt}".encode()
     return hashlib.sha256(value).hexdigest()
 
 
 def generate_conversation_reply(
     messages: list[dict[str, str]],
     system_prompt: str = "",
-    model: Optional[str] = None,
+    model: str | None = None,
     max_new_tokens: int = 300,
     timeout: float = 120,
     temperature: float = 0.7,
-) -> Optional[str]:
+) -> str | None:
     """Return an Ollama chat reply, or ``None`` when the provider is unavailable."""
     selected_model = (model or DEFAULT_MODEL).strip()
     full_messages: list[dict[str, str]] = []
@@ -59,7 +57,7 @@ def generate_conversation_reply(
         return None
 
 
-def generate_text(prompt: str, model: Optional[str] = None, max_new_tokens: int = 160) -> Optional[str]:
+def generate_text(prompt: str, model: str | None = None, max_new_tokens: int = 160) -> str | None:
     """Generate text with Ollama, then Hugging Face, then the opt-in limited fallback."""
     selected_model = (model or DEFAULT_MODEL).strip()
     key = _cache_key(selected_model, prompt)
@@ -85,7 +83,7 @@ def generate_text(prompt: str, model: Optional[str] = None, max_new_tokens: int 
     return text
 
 
-def _generate_with_ollama(prompt: str, model: str, max_new_tokens: int) -> Optional[str]:
+def _generate_with_ollama(prompt: str, model: str, max_new_tokens: int) -> str | None:
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -100,7 +98,7 @@ def _generate_with_ollama(prompt: str, model: str, max_new_tokens: int) -> Optio
         return None
 
 
-def _generate_with_hugging_face(prompt: str, max_new_tokens: int) -> Optional[str]:
+def _generate_with_hugging_face(prompt: str, max_new_tokens: int) -> str | None:
     try:
         from huggingface_hub import InferenceClient
 
@@ -112,7 +110,7 @@ def _generate_with_hugging_face(prompt: str, max_new_tokens: int) -> Optional[st
         return None
 
 
-def _limited_local_examples(prompt: str) -> Optional[str]:
+def _limited_local_examples(prompt: str) -> str | None:
     """Return curated ``to be`` examples; this function never evaluates user text."""
     normalized = prompt.lower()
     if "generate" not in normalized or "sentence" not in normalized or "to be" not in normalized:

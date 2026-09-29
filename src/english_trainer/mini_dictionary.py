@@ -1,15 +1,15 @@
 """Dictionary mode: local lookup with online fallback and fuzzy suggestions."""
 
-from typing import Dict, Any
 import difflib
+from typing import Any
 
 from .data_access import find_in_dictionary
 from .dictionary_api import fetch_dictionary_entry
 from .progress import register_dictionary_lookup
-from .utils import pause, read_choice, clear_screen
+from .utils import clear_screen, pause, read_choice
 
 
-def run_mini_dictionary(content: Dict[str, Any], progress: Dict[str, Any]) -> None:
+def run_mini_dictionary(content: dict[str, Any], progress: dict[str, Any]) -> None:
     dictionary = content.get("dictionary", {})
     if not dictionary:
         print("No dictionary data.")
@@ -35,7 +35,7 @@ def run_mini_dictionary(content: Dict[str, Any], progress: Dict[str, Any]) -> No
             pause()
             continue
 
-        entry: Dict[str, Any] | None = fetch_dictionary_entry(word.lower())
+        entry: dict[str, Any] | None = fetch_dictionary_entry(word.lower())
         if entry:
             print("Found online ✅")
             if entry.get("phonetic"):
@@ -48,7 +48,9 @@ def run_mini_dictionary(content: Dict[str, Any], progress: Dict[str, Any]) -> No
                 print(f"Example: {entry['example']}")
         else:
             print("Not found ❌")
-            close_matches = difflib.get_close_matches(word.lower(), dictionary.keys(), n=3, cutoff=0.6)
+            close_matches = difflib.get_close_matches(
+                word.lower(), dictionary.keys(), n=3, cutoff=0.6
+            )
             if close_matches:
                 print("Did you mean:")
                 for m in close_matches:

@@ -1,11 +1,12 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import os
 import re
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional, Protocol, Sequence
+from typing import Any, Protocol
 
 from ..data_access import DATA_DIR
 from ..hf_llm import generate_conversation_reply
@@ -13,7 +14,6 @@ from .chunking import build_knowledge_chunks, corpus_fingerprint
 from .embeddings import EmbeddingError, OllamaEmbeddingClient
 from .models import KnowledgeChunk, RagSource, SearchHit
 from .vector_store import QdrantKnowledgeStore, VectorStoreError
-
 
 RAG_INDEX_DIR = DATA_DIR / "rag_index"
 
@@ -31,7 +31,9 @@ class Embedder(Protocol):
 class KnowledgeStore(Protocol):
     def count(self) -> int: ...
 
-    def replace(self, chunks: Sequence[KnowledgeChunk], vectors: Sequence[Sequence[float]]) -> None: ...
+    def replace(
+        self, chunks: Sequence[KnowledgeChunk], vectors: Sequence[Sequence[float]]
+    ) -> None: ...
 
     def search(self, vector: Sequence[float], limit: int = 5) -> list[SearchHit]: ...
 
@@ -50,7 +52,7 @@ class RagService:
         embedder: Embedder | None = None,
         store: KnowledgeStore | None = None,
         index_dir: Path = RAG_INDEX_DIR,
-        generator: Callable[..., Optional[str]] = generate_conversation_reply,
+        generator: Callable[..., str | None] = generate_conversation_reply,
         chunk_builder: Callable[[dict[str, Any]], list[KnowledgeChunk]] = build_knowledge_chunks,
         min_score: float | None = None,
     ) -> None:
@@ -226,9 +228,31 @@ def _search_tokens(value: str) -> set[str]:
     normalized = value.lower()
     normalized = normalized.replace("doesn't", "does not").replace("don't", "do not")
     stopwords = {
-        "a", "an", "and", "as", "da", "de", "do", "e", "em", "explain", "explique",
-        "frase", "in", "is", "na", "no", "o", "os", "por", "que", "the", "this",
-        "um", "uma", "why",
+        "a",
+        "an",
+        "and",
+        "as",
+        "da",
+        "de",
+        "do",
+        "e",
+        "em",
+        "explain",
+        "explique",
+        "frase",
+        "in",
+        "is",
+        "na",
+        "no",
+        "o",
+        "os",
+        "por",
+        "que",
+        "the",
+        "this",
+        "um",
+        "uma",
+        "why",
     }
     return {
         token
@@ -241,6 +265,7 @@ def _response_language(question: str) -> str:
     if re.search(r"\b(por que|explique|como|qual|erro|frase|está|estão|não)\b", question.lower()):
         return "Brazilian Portuguese"
     return "English"
+
 
 def _learner_context(content: dict[str, Any], progress: dict[str, Any]) -> str:
     labels: dict[str, tuple[str, str]] = {}
@@ -266,5 +291,3 @@ def _learner_context(content: dict[str, Any], progress: dict[str, Any]) -> str:
         return "No recurring difficulty has been recorded yet."
     difficult.sort(key=lambda item: (item[0], item[1]), reverse=True)
     return "Recent difficult items:\n" + "\n".join(f"- {item[2]}" for item in difficult[:5])
-
-

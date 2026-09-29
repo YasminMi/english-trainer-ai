@@ -3,12 +3,12 @@ from __future__ import annotations
 import hashlib
 import re
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from ..data_access import BASE_DIR, NOTES_DIR
 from .models import KnowledgeChunk
-
 
 _GENERIC_TAGS = {
     "affirmative",
@@ -141,7 +141,11 @@ def _chunks_from_sentences(
         tags = [str(tag) for tag in sentence.get("tags", [])]
         topic = _topic_from_tags(tags)
         level = _infer_level(" ".join(tags))
-        source = "data/user_content.json" if str(sentence.get("id", "")).startswith("user_") else "data/content.json#sentences"
+        source = (
+            "data/user_content.json"
+            if str(sentence.get("id", "")).startswith("user_")
+            else "data/content.json#sentences"
+        )
         grouped[(source, topic, level)].append(sentence)
 
     chunks: list[KnowledgeChunk] = []
@@ -169,13 +173,19 @@ def _chunks_from_sentences(
     return chunks
 
 
-def _chunks_from_flashcards(cards: list[dict[str, Any]], group_size: int = 10) -> list[KnowledgeChunk]:
+def _chunks_from_flashcards(
+    cards: list[dict[str, Any]], group_size: int = 10
+) -> list[KnowledgeChunk]:
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for card in cards:
         if card.get("source_note"):
             continue
         category = str(card.get("category") or "vocabulary")
-        source = "data/user_content.json" if str(card.get("id", "")).startswith("user_") else "data/content.json#flashcards"
+        source = (
+            "data/user_content.json"
+            if str(card.get("id", "")).startswith("user_")
+            else "data/content.json#flashcards"
+        )
         grouped[(source, category)].append(card)
 
     chunks: list[KnowledgeChunk] = []
@@ -207,7 +217,7 @@ def _make_chunk(
     metadata: dict[str, Any],
 ) -> KnowledgeChunk:
     normalized = re.sub(r"\s+", " ", text).strip()
-    chunk_id = hashlib.sha256(f"{source}\n{title}\n{normalized}".encode("utf-8")).hexdigest()
+    chunk_id = hashlib.sha256(f"{source}\n{title}\n{normalized}".encode()).hexdigest()
     return KnowledgeChunk(
         id=chunk_id,
         text=text.strip(),
@@ -279,4 +289,3 @@ def _deduplicate(chunks: list[KnowledgeChunk]) -> list[KnowledgeChunk]:
     for chunk in chunks:
         unique.setdefault(chunk.id, chunk)
     return sorted(unique.values(), key=lambda item: (item.source, item.topic, item.id))
-

@@ -1,6 +1,6 @@
 """Terminal app entry point and study flow menus."""
 
-from typing import Any, Dict
+from typing import Any
 
 from .ai_coach import run_ai_coach
 from .conversation import run_conversation
@@ -16,21 +16,21 @@ from .flashcards import run_flashcards_session
 from .free_writing import run_free_writing
 from .mini_dictionary import run_mini_dictionary
 from .progress import (
-    show_progress_summary,
     compute_overall,
     recommend_practice_mode,
     set_daily_goal,
+    show_progress_summary,
 )
 from .rag_cli import run_rag_tutor
-from .reporting import build_weekly_report, format_weekly_report, export_progress_snapshot
+from .reporting import build_weekly_report, export_progress_snapshot, format_weekly_report
 from .to_be_trainer import run_to_be_trainer
 from .training import run_sentence_training
-from .utils import clear_screen, read_choice, pause
+from .utils import clear_screen, pause, read_choice
 
 
 def run_app() -> None:
-    content: Dict[str, Any] = load_content()
-    progress: Dict[str, Any] = load_progress()
+    content: dict[str, Any] = load_content()
+    progress: dict[str, Any] = load_progress()
     _run_onboarding(progress)
 
     while True:
@@ -176,11 +176,7 @@ def _sentence_training_menu(content: dict, progress: dict) -> None:
 
 def _available_sources(content: dict, section: str) -> list[str]:
     items = content.get(section, [])
-    sources = {
-        item.get("source_note")
-        for item in items
-        if item.get("source_note")
-    }
+    sources = {item.get("source_note") for item in items if item.get("source_note")}
     return sorted(sources)
 
 
@@ -384,7 +380,7 @@ def _add_content_menu(content: dict) -> None:
         added = False
         if choice == "0":
             return
-        elif choice == "1":
+        if choice == "1":
             added = _add_sentence(content, user_content)
         elif choice == "2":
             added = _add_flashcard(content, user_content)
@@ -401,6 +397,7 @@ def _add_content_menu(content: dict) -> None:
 
 def _add_sentence(content: dict, user_content: dict) -> bool:
     from .utils import _clean_text
+
     en: str = read_choice("English sentence: ").strip()
     if not en:
         print("No sentence provided.")
@@ -425,6 +422,7 @@ def _add_sentence(content: dict, user_content: dict) -> bool:
 
 def _add_flashcard(content: dict, user_content: dict) -> bool:
     from .utils import _clean_text
+
     en: str = read_choice("English word: ").strip()
     if not en:
         print("No word provided.")

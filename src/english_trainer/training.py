@@ -2,24 +2,48 @@
 
 import random
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .progress import register_sentence_result, get_srs_weight
-from .utils import clear_screen, is_close_answer, normalize_pt_phrase, pause, read_choice, _strip_accents
+from .progress import get_srs_weight, register_sentence_result
+from .utils import (
+    _strip_accents,
+    clear_screen,
+    is_close_answer,
+    normalize_pt_phrase,
+    pause,
+    read_choice,
+)
 
 
-def _detect_tense_hint(en_sentence: str, user_answer: str) -> Optional[str]:
+def _detect_tense_hint(en_sentence: str, user_answer: str) -> str | None:
     user = _strip_accents(normalize_pt_phrase(user_answer).lower())
     english = en_sentence.lower()
 
     past_en_markers = (" was ", " were ", " did ", " did not ", " yesterday", " last ", " ago")
-    present_en_markers = (" am ", " is ", " are ", " do ", " does ", " do not ", " does not ", " now", " today")
+    present_en_markers = (
+        " am ",
+        " is ",
+        " are ",
+        " do ",
+        " does ",
+        " do not ",
+        " does not ",
+        " now",
+        " today",
+    )
 
     has_past_en = any(marker in f" {english} " for marker in past_en_markers)
     has_present_en = any(marker in f" {english} " for marker in present_en_markers)
 
-    has_past_pt = bool(re.search(r"\b(estava|estavam|foi|foram|fez|fizeram|era|eram|trabalhei|estudou|foi|assistiu|fui)\b", user))
-    has_present_pt = bool(re.search(r"\b(esta|estao|estou|faz|fazem|e|sao|trabalho|estudo|assisto)\b", user))
+    has_past_pt = bool(
+        re.search(
+            r"\b(estava|estavam|foi|foram|fez|fizeram|era|eram|trabalhei|estudou|foi|assistiu|fui)\b",
+            user,
+        )
+    )
+    has_present_pt = bool(
+        re.search(r"\b(esta|estao|estou|faz|fazem|e|sao|trabalho|estudo|assisto)\b", user)
+    )
 
     if has_present_en and has_past_pt:
         return "Hint: your answer looks like past tense, but the sentence is in the present."
@@ -29,10 +53,10 @@ def _detect_tense_hint(en_sentence: str, user_answer: str) -> Optional[str]:
 
 
 def _weighted_choice(
-    items: List[Dict[str, Any]],
-    progress_section: Dict[str, Any],
-    progress: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    items: list[dict[str, Any]],
+    progress_section: dict[str, Any],
+    progress: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Pick an item, giving higher weight to unseen and low-accuracy items."""
     if len(items) == 1:
         return items[0]
@@ -56,9 +80,9 @@ def _weighted_choice(
 
 
 def run_sentence_training(
-    content: Dict[str, Any],
-    progress: Dict[str, Any],
-    source_note: Optional[str] = None,
+    content: dict[str, Any],
+    progress: dict[str, Any],
+    source_note: str | None = None,
 ) -> None:
     sentences = content.get("sentences", [])
     if source_note:

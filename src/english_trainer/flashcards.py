@@ -1,17 +1,17 @@
 """Flashcard mode: word → meaning with SRS-weighted card selection."""
 
 import random
-from typing import Dict, Any, List, Optional
+from typing import Any
 
-from .utils import is_close_answer, pause, clear_screen, read_choice
-from .progress import register_flashcard_result, get_srs_weight
+from .progress import get_srs_weight, register_flashcard_result
+from .utils import clear_screen, is_close_answer, pause, read_choice
 
 
 def _filter(
-    cards: List[Dict[str, Any]],
-    category: Optional[str],
-    source_note: Optional[str],
-) -> List[Dict[str, Any]]:
+    cards: list[dict[str, Any]],
+    category: str | None,
+    source_note: str | None,
+) -> list[dict[str, Any]]:
     filtered = list(cards)
     if category is not None:
         filtered = [c for c in filtered if c.get("category") == category]
@@ -21,10 +21,10 @@ def _filter(
 
 
 def _weighted_choice(
-    cards: List[Dict[str, Any]],
-    progress_section: Dict[str, Any],
-    progress: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    cards: list[dict[str, Any]],
+    progress_section: dict[str, Any],
+    progress: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Pick a card, favouring unseen and low-accuracy items."""
     if len(cards) == 1:
         return cards[0]
@@ -48,10 +48,10 @@ def _weighted_choice(
 
 
 def run_flashcards_session(
-    content: Dict[str, Any],
-    progress: Dict[str, Any],
-    category: Optional[str] = None,
-    source_note: Optional[str] = None,
+    content: dict[str, Any],
+    progress: dict[str, Any],
+    category: str | None = None,
+    source_note: str | None = None,
 ) -> None:
     cards = content.get("flashcards", [])
     if not cards:
@@ -82,7 +82,7 @@ def run_flashcards_session(
             print(f"Session: {session_correct}/{session_total} ({pct}%)")
         print("Type the meaning in Portuguese. Type '0' to go back.\n")
 
-        card: Dict[str, Any] = _weighted_choice(cards, progress_flashcards, progress=progress)
+        card: dict[str, Any] = _weighted_choice(cards, progress_flashcards, progress=progress)
         en = card["en"]
         pt = card["pt"]
         card_id = card.get("id", en)

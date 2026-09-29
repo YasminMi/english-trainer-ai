@@ -6,10 +6,9 @@ import re
 import tempfile
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .utils import _clean_text
-
 
 BASE_DIR: Path = Path(__file__).resolve().parents[2]
 DATA_DIR: Path = BASE_DIR / "data"
@@ -20,7 +19,7 @@ AI_CACHE_FILE: Path = DATA_DIR / "ai_cache.json"
 USER_CONTENT_FILE: Path = DATA_DIR / "user_content.json"
 
 
-def _read_json_object(path: Path) -> Dict[str, Any]:
+def _read_json_object(path: Path) -> dict[str, Any]:
     """Read a JSON object, returning an empty object for missing or invalid local data."""
     if not path.exists():
         return {}
@@ -33,15 +32,17 @@ def _read_json_object(path: Path) -> Dict[str, Any]:
         return {}
 
     if not isinstance(data, dict):
-        warnings.warn(f"Ignoring {path.name}: expected a JSON object.", RuntimeWarning, stacklevel=2)
+        warnings.warn(
+            f"Ignoring {path.name}: expected a JSON object.", RuntimeWarning, stacklevel=2
+        )
         return {}
     return data
 
 
-def _write_json_atomic(path: Path, data: Dict[str, Any]) -> None:
+def _write_json_atomic(path: Path, data: dict[str, Any]) -> None:
     """Write JSON to a temporary file and atomically replace the destination."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path: Optional[Path] = None
+    temp_path: Path | None = None
     try:
         with tempfile.NamedTemporaryFile(
             mode="w",
@@ -62,7 +63,7 @@ def _write_json_atomic(path: Path, data: Dict[str, Any]) -> None:
             temp_path.unlink(missing_ok=True)
 
 
-def load_content() -> Dict[str, Any]:
+def load_content() -> dict[str, Any]:
     """Return content merged from JSON and Markdown notes."""
     content = _empty_content()
 
@@ -80,18 +81,20 @@ def load_content() -> Dict[str, Any]:
     return content
 
 
-def load_user_content() -> Dict[str, Any]:
+def load_user_content() -> dict[str, Any]:
     """Load private user-created study material from the ignored local file."""
     content = _empty_content()
     _merge_content(content, _read_json_object(USER_CONTENT_FILE))
     return content
 
 
-def load_markdown_notes() -> Dict[str, Any]:
+def load_markdown_notes() -> dict[str, Any]:
     """Parse Markdown notes into content items."""
     parsed = _empty_content()
     parsed["metadata"]["markdown_notes_enabled"] = True
-    parsed["metadata"]["markdown_notes_dir"] = str(NOTES_DIR.relative_to(BASE_DIR)) if NOTES_DIR.exists() else "notes"
+    parsed["metadata"]["markdown_notes_dir"] = (
+        str(NOTES_DIR.relative_to(BASE_DIR)) if NOTES_DIR.exists() else "notes"
+    )
 
     if not NOTES_DIR.exists():
         return parsed
@@ -106,7 +109,7 @@ def load_markdown_notes() -> Dict[str, Any]:
     return parsed
 
 
-def _empty_content() -> Dict[str, Any]:
+def _empty_content() -> dict[str, Any]:
     return {
         "metadata": {},
         "sentences": [],
@@ -116,7 +119,7 @@ def _empty_content() -> Dict[str, Any]:
     }
 
 
-def _merge_content(base: Dict[str, Any], extra: Dict[str, Any]) -> None:
+def _merge_content(base: dict[str, Any], extra: dict[str, Any]) -> None:
     base.setdefault("metadata", {}).update(extra.get("metadata", {}))
     base.setdefault("sentences", []).extend(extra.get("sentences", []))
     base.setdefault("flashcards", []).extend(extra.get("flashcards", []))
@@ -124,7 +127,7 @@ def _merge_content(base: Dict[str, Any], extra: Dict[str, Any]) -> None:
     base.setdefault("dictionary", {}).update(extra.get("dictionary", {}))
 
 
-def _parse_markdown_note(note_path: Path) -> Dict[str, Any]:
+def _parse_markdown_note(note_path: Path) -> dict[str, Any]:
     content = _empty_content()
     relative_note = note_path.relative_to(BASE_DIR).as_posix()
     note_slug = _slugify(note_path.relative_to(NOTES_DIR).with_suffix("").as_posix())
@@ -144,7 +147,7 @@ def _parse_markdown_note(note_path: Path) -> Dict[str, Any]:
 
 def _split_markdown_sections(text: str) -> list[tuple[str, str]]:
     sections: list[tuple[str, str]] = []
-    current_heading: Optional[str] = None
+    current_heading: str | None = None
     current_lines: list[str] = []
 
     for raw_line in text.splitlines():
@@ -165,10 +168,9 @@ def _split_markdown_sections(text: str) -> list[tuple[str, str]]:
     return sections
 
 
-
-def _parse_sentence_section(body: str, note_slug: str, relative_note: str) -> list[Dict[str, Any]]:
-    sentences: list[Dict[str, Any]] = []
-    current_en: Optional[str] = None
+def _parse_sentence_section(body: str, note_slug: str, relative_note: str) -> list[dict[str, Any]]:
+    sentences: list[dict[str, Any]] = []
+    current_en: str | None = None
     current_tags: list[str] = []
 
     for raw_line in body.splitlines():
@@ -202,8 +204,8 @@ def _parse_sentence_section(body: str, note_slug: str, relative_note: str) -> li
     return sentences
 
 
-def _parse_flashcard_section(body: str, note_slug: str, relative_note: str) -> list[Dict[str, Any]]:
-    cards: list[Dict[str, Any]] = []
+def _parse_flashcard_section(body: str, note_slug: str, relative_note: str) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
     for raw_line in body.splitlines():
         line = raw_line.strip()
         if not line.startswith("- "):
@@ -227,8 +229,8 @@ def _parse_flashcard_section(body: str, note_slug: str, relative_note: str) -> l
     return cards
 
 
-def _parse_dictionary_section(body: str) -> Dict[str, str]:
-    dictionary: Dict[str, str] = {}
+def _parse_dictionary_section(body: str) -> dict[str, str]:
+    dictionary: dict[str, str] = {}
 
     for raw_line in body.splitlines():
         line = raw_line.strip()
@@ -251,7 +253,7 @@ def _slugify(value: str) -> str:
     return cleaned.strip("_") or "note"
 
 
-def load_progress() -> Dict[str, Any]:
+def load_progress() -> dict[str, Any]:
     if not PROGRESS_FILE.exists():
         return {
             "sentences": {},
@@ -286,30 +288,30 @@ def load_progress() -> Dict[str, Any]:
     return data
 
 
-def save_progress(progress: Dict[str, Any]) -> None:
+def save_progress(progress: dict[str, Any]) -> None:
     _write_json_atomic(PROGRESS_FILE, progress)
 
 
-def save_content(content: Dict[str, Any]) -> None:
+def save_content(content: dict[str, Any]) -> None:
     """Write the given content structure back to the JSON file."""
     _write_json_atomic(CONTENT_FILE, content)
 
 
-def save_user_content(content: Dict[str, Any]) -> None:
+def save_user_content(content: dict[str, Any]) -> None:
     """Persist user-created study material outside the versioned content file."""
     _write_json_atomic(USER_CONTENT_FILE, content)
 
 
-def find_in_dictionary(content: Dict[str, Any], word: str) -> Optional[str]:
-    dictionary: Dict[str, str] = content.get("dictionary", {})
+def find_in_dictionary(content: dict[str, Any], word: str) -> str | None:
+    dictionary: dict[str, str] = content.get("dictionary", {})
     key: str = _clean_text(word).replace("/", " ")
     key = " ".join(key.split())
     return dictionary.get(key)
 
 
-def load_ai_cache() -> Dict[str, Any]:
+def load_ai_cache() -> dict[str, Any]:
     return _read_json_object(AI_CACHE_FILE)
 
 
-def save_ai_cache(cache: Dict[str, Any]) -> None:
+def save_ai_cache(cache: dict[str, Any]) -> None:
     _write_json_atomic(AI_CACHE_FILE, cache)

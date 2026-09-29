@@ -1,13 +1,13 @@
 """To be trainer: multiple-choice drills for am / is / are / was / were."""
 
 import random
-from typing import Dict, Any, List
+from typing import Any
 
-from .utils import pause, clear_screen, read_choice
-from .progress import register_to_be_result, get_srs_weight
+from .progress import get_srs_weight, register_to_be_result
+from .utils import clear_screen, pause, read_choice
 
 
-def _weighted_choice(exercises: List[Dict[str, Any]], progress: Dict[str, Any]) -> Dict[str, Any]:
+def _weighted_choice(exercises: list[dict[str, Any]], progress: dict[str, Any]) -> dict[str, Any]:
     if len(exercises) == 1:
         return exercises[0]
 
@@ -28,8 +28,8 @@ def _weighted_choice(exercises: List[Dict[str, Any]], progress: Dict[str, Any]) 
     return random.choices(exercises, weights=weights, k=1)[0]
 
 
-def run_to_be_trainer(content: Dict[str, Any], progress: Dict[str, Any]) -> None:
-    exercises: List[Dict[str, Any]] = content.get("to_be_exercises", [])
+def run_to_be_trainer(content: dict[str, Any], progress: dict[str, Any]) -> None:
+    exercises: list[dict[str, Any]] = content.get("to_be_exercises", [])
     if not exercises:
         print("No to-be exercises configured.")
         pause()
@@ -41,13 +41,13 @@ def run_to_be_trainer(content: Dict[str, Any], progress: Dict[str, Any]) -> None
         print("Choose the correct form to complete the sentence.")
         print("Type '0' to go back.\n")
 
-        ex: Dict[str, Any] = _weighted_choice(exercises, progress)
+        ex: dict[str, Any] = _weighted_choice(exercises, progress)
 
         q = ex["question"]
         options = ex["options"]
         correct_answer = ex["correct"]
         pt = ex["pt"]
-        explanation: Any | None = ex.get("explanation")  
+        explanation: Any | None = ex.get("explanation")
         ex_id = ex.get("id", q)
 
         print(f"Sentence: {q}")
@@ -83,6 +83,6 @@ def run_to_be_trainer(content: Dict[str, Any], progress: Dict[str, Any]) -> None
         print(f"Meaning (PT): {pt}")
 
         if explanation:
-            print(f"Explanation: {explanation}")  
+            print(f"Explanation: {explanation}")
 
         pause()

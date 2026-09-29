@@ -41,4 +41,3 @@ def test_ollama_embedding_client_reports_provider_failure(monkeypatch):
 
     with pytest.raises(EmbeddingError, match="embed-test"):
         client.embed(["question"])
-

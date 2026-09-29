@@ -28,7 +28,7 @@ class KnowledgeChunk:
         }
 
     @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> "KnowledgeChunk":
+    def from_payload(cls, payload: dict[str, Any]) -> KnowledgeChunk:
         return cls(
             id=str(payload["chunk_id"]),
             text=str(payload["text"]),
@@ -54,4 +54,3 @@ class RagSource:
     title: str
     topic: str
     score: float
-

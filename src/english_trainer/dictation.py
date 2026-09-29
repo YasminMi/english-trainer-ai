@@ -1,7 +1,7 @@
 """Dictation: listen to a sentence, type what you heard."""
 
 import random
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .audio import RATE_NORMAL, RATE_SLOW, audio_available, speak
 from .progress import get_srs_weight, register_sentence_result
@@ -9,10 +9,10 @@ from .utils import clear_screen, is_close_answer, pause, read_choice
 
 
 def _weighted_choice(
-    sentences: List[Dict[str, Any]],
-    progress_sentences: Dict[str, Any],
-    progress: Dict[str, Any],
-) -> Dict[str, Any]:
+    sentences: list[dict[str, Any]],
+    progress_sentences: dict[str, Any],
+    progress: dict[str, Any],
+) -> dict[str, Any]:
     if len(sentences) == 1:
         return sentences[0]
 
@@ -30,9 +30,9 @@ def _weighted_choice(
 
 
 def run_dictation(
-    content: Dict[str, Any],
-    progress: Dict[str, Any],
-    source_note: Optional[str] = None,
+    content: dict[str, Any],
+    progress: dict[str, Any],
+    source_note: str | None = None,
 ) -> None:
     sentences = content.get("sentences", [])
     if source_note:

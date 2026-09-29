@@ -38,7 +38,9 @@ def test_generate_text_cache(monkeypatch):
 
 
 def test_local_fallback_does_not_evaluate_free_writing(monkeypatch):
-    monkeypatch.setattr(requests, "post", lambda *args, **kwargs: (_ for _ in ()).throw(requests.ConnectionError()))
+    monkeypatch.setattr(
+        requests, "post", lambda *args, **kwargs: (_ for _ in ()).throw(requests.ConnectionError())
+    )
     monkeypatch.setattr(hf_llm, "load_ai_cache", lambda: {})
     monkeypatch.setenv("HF_TOKEN", "")
     monkeypatch.setenv("AI_LOCAL_FALLBACK", "1")
@@ -47,7 +49,9 @@ def test_local_fallback_does_not_evaluate_free_writing(monkeypatch):
 
 
 def test_local_fallback_returns_curated_sentence_examples(monkeypatch):
-    monkeypatch.setattr(requests, "post", lambda *args, **kwargs: (_ for _ in ()).throw(requests.ConnectionError()))
+    monkeypatch.setattr(
+        requests, "post", lambda *args, **kwargs: (_ for _ in ()).throw(requests.ConnectionError())
+    )
     monkeypatch.setattr(hf_llm, "load_ai_cache", lambda: {})
     monkeypatch.setattr(hf_llm, "save_ai_cache", lambda _cache: None)
     monkeypatch.setenv("HF_TOKEN", "")

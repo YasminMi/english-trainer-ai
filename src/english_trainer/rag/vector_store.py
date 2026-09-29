@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from .models import KnowledgeChunk, SearchHit
 
@@ -81,4 +81,3 @@ class QdrantKnowledgeStore:
         close = getattr(self._client, "close", None)
         if callable(close):
             close()
-

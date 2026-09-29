@@ -3,24 +3,23 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
-from typing import Dict, Tuple, Optional
 
 DEFAULT_DAILY_GOAL = 20
 PRACTICE_MODES = ("sentences", "flashcards", "to_be")
 
 
-def _update_item(section: Dict[str, Dict[str, int]], item_id: str, correct: bool) -> None:
-    stats: Dict[str, int] = section.setdefault(item_id, {"seen": 0, "correct": 0})
+def _update_item(section: dict[str, dict[str, int]], item_id: str, correct: bool) -> None:
+    stats: dict[str, int] = section.setdefault(item_id, {"seen": 0, "correct": 0})
     stats["seen"] += 1
     if correct:
         stats["correct"] += 1
 
 
-def _today_iso(when: Optional[date] = None) -> str:
+def _today_iso(when: date | None = None) -> str:
     return (when or date.today()).isoformat()
 
 
-def _safe_date(value: str | None) -> Optional[date]:
+def _safe_date(value: str | None) -> date | None:
     if not value:
         return None
     try:
@@ -29,7 +28,7 @@ def _safe_date(value: str | None) -> Optional[date]:
         return None
 
 
-def _ensure_daily(progress: Dict) -> Dict:
+def _ensure_daily(progress: dict) -> dict:
     daily = progress.setdefault("daily", {})
     daily.setdefault("goal", DEFAULT_DAILY_GOAL)
     daily.setdefault("history", {})
@@ -39,7 +38,7 @@ def _ensure_daily(progress: Dict) -> Dict:
     return daily
 
 
-def _update_streak(progress: Dict, when: Optional[date] = None) -> None:
+def _update_streak(progress: dict, when: date | None = None) -> None:
     day = when or date.today()
     day_iso = day.isoformat()
     daily = _ensure_daily(progress)
@@ -57,7 +56,9 @@ def _update_streak(progress: Dict, when: Optional[date] = None) -> None:
     daily["last_study_date"] = day_iso
 
 
-def _register_daily_attempt(progress: Dict, mode: str, correct: bool, when: Optional[date] = None) -> None:
+def _register_daily_attempt(
+    progress: dict, mode: str, correct: bool, when: date | None = None
+) -> None:
     day_iso = _today_iso(when)
     daily = _ensure_daily(progress)
     history = daily.setdefault("history", {})
@@ -78,12 +79,14 @@ def _register_daily_attempt(progress: Dict, mode: str, correct: bool, when: Opti
     _update_streak(progress, when)
 
 
-def _ensure_srs(progress: Dict, mode: str) -> Dict:
+def _ensure_srs(progress: dict, mode: str) -> dict:
     srs = progress.setdefault("srs", {})
     return srs.setdefault(mode, {})
 
 
-def _update_srs(progress: Dict, mode: str, item_id: str, correct: bool, when: Optional[date] = None) -> None:
+def _update_srs(
+    progress: dict, mode: str, item_id: str, correct: bool, when: date | None = None
+) -> None:
     day = when or date.today()
     mode_section = _ensure_srs(progress, mode)
     state = mode_section.setdefault(
@@ -125,7 +128,7 @@ def _update_srs(progress: Dict, mode: str, item_id: str, correct: bool, when: Op
     state["last_result"] = bool(correct)
 
 
-def get_srs_weight(progress: Dict, mode: str, item_id: str, when: Optional[date] = None) -> float:
+def get_srs_weight(progress: dict, mode: str, item_id: str, when: date | None = None) -> float:
     mode_srs = progress.get("srs", {}).get(mode, {})
     state = mode_srs.get(item_id)
     if not state:
@@ -142,7 +145,7 @@ def get_srs_weight(progress: Dict, mode: str, item_id: str, when: Optional[date]
     return max(0.35, 1.0 + 0.1 * days_overdue)
 
 
-def count_due_reviews(progress: Dict, when: Optional[date] = None) -> Dict[str, int]:
+def count_due_reviews(progress: dict, when: date | None = None) -> dict[str, int]:
     day = when or date.today()
     out = {"sentences": 0, "flashcards": 0, "to_be": 0, "total": 0}
     srs = progress.get("srs", {})
@@ -159,7 +162,7 @@ def count_due_reviews(progress: Dict, when: Optional[date] = None) -> Dict[str, 
     return out
 
 
-def recommend_practice_mode(progress: Dict) -> str:
+def recommend_practice_mode(progress: dict) -> str:
     stats = compute_overall(progress)
     due = count_due_reviews(progress)
 
@@ -177,14 +180,14 @@ def recommend_practice_mode(progress: Dict) -> str:
     return candidates[0][1]
 
 
-def set_daily_goal(progress: Dict, goal: int) -> int:
+def set_daily_goal(progress: dict, goal: int) -> int:
     value = max(1, int(goal))
     daily = _ensure_daily(progress)
     daily["goal"] = value
     return value
 
 
-def daily_goal_status(progress: Dict, when: Optional[date] = None) -> Dict[str, float]:
+def daily_goal_status(progress: dict, when: date | None = None) -> dict[str, float]:
     day_iso = _today_iso(when)
     daily = _ensure_daily(progress)
     history = daily.get("history", {})
@@ -205,33 +208,33 @@ def daily_goal_status(progress: Dict, when: Optional[date] = None) -> Dict[str, 
     }
 
 
-def register_sentence_result(progress: Dict, sentence_id: str, correct: bool) -> None:
+def register_sentence_result(progress: dict, sentence_id: str, correct: bool) -> None:
     _update_item(progress.setdefault("sentences", {}), sentence_id, correct)
     _register_daily_attempt(progress, "sentences", correct)
     _update_srs(progress, "sentences", sentence_id, correct)
 
 
-def register_flashcard_result(progress: Dict, flashcard_id: str, correct: bool) -> None:
+def register_flashcard_result(progress: dict, flashcard_id: str, correct: bool) -> None:
     _update_item(progress.setdefault("flashcards", {}), flashcard_id, correct)
     _register_daily_attempt(progress, "flashcards", correct)
     _update_srs(progress, "flashcards", flashcard_id, correct)
 
 
-def register_to_be_result(progress: Dict, exercise_id: str, correct: bool) -> None:
+def register_to_be_result(progress: dict, exercise_id: str, correct: bool) -> None:
     _update_item(progress.setdefault("to_be", {}), exercise_id, correct)
     _register_daily_attempt(progress, "to_be", correct)
     _update_srs(progress, "to_be", exercise_id, correct)
 
 
-def register_dictionary_lookup(progress: Dict) -> None:
+def register_dictionary_lookup(progress: dict) -> None:
     progress["dictionary_lookups"] = int(progress.get("dictionary_lookups", 0)) + 1
 
 
-def register_ai_use(progress: Dict) -> None:
+def register_ai_use(progress: dict) -> None:
     progress["ai_uses"] = int(progress.get("ai_uses", 0)) + 1
 
 
-def _compute(section: Dict[str, Dict[str, int]]) -> Tuple[int, int]:
+def _compute(section: dict[str, dict[str, int]]) -> tuple[int, int]:
     seen = 0
     correct = 0
     for v in section.values():
@@ -240,7 +243,7 @@ def _compute(section: Dict[str, Dict[str, int]]) -> Tuple[int, int]:
     return seen, correct
 
 
-def compute_overall(progress: Dict) -> Dict[str, float]:
+def compute_overall(progress: dict) -> dict[str, float]:
     s_seen, s_correct = _compute(progress.get("sentences", {}))
     f_seen, f_correct = _compute(progress.get("flashcards", {}))
     t_seen, t_correct = _compute(progress.get("to_be", {}))
@@ -279,8 +282,8 @@ def compute_overall(progress: Dict) -> Dict[str, float]:
     }
 
 
-def show_progress_summary(progress: Dict) -> None:
-    stats: Dict[str, float] = compute_overall(progress)
+def show_progress_summary(progress: dict) -> None:
+    stats: dict[str, float] = compute_overall(progress)
     print("\n=== Progress Summary ===")
     print(f"Total attempts:      {stats['total_seen']}")
     print(f"Total correct:       {stats['total_correct']}")

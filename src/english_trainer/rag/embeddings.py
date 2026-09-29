@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Sequence
+from collections.abc import Sequence
 
 import requests
 
@@ -52,4 +52,3 @@ class OllamaEmbeddingClient:
                     raise EmbeddingError("Ollama returned an empty embedding vector.")
                 vectors.append([float(value) for value in vector])
         return vectors
-

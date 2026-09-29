@@ -7,9 +7,27 @@ def test_build_weekly_report_aggregates_daily_history():
     progress = {
         "daily": {
             "history": {
-                "2026-05-30": {"attempts": 5, "correct": 4, "sentences": 2, "flashcards": 2, "to_be": 1},
-                "2026-05-31": {"attempts": 3, "correct": 1, "sentences": 1, "flashcards": 1, "to_be": 1},
-                "2026-06-01": {"attempts": 2, "correct": 2, "sentences": 2, "flashcards": 0, "to_be": 0},
+                "2026-05-30": {
+                    "attempts": 5,
+                    "correct": 4,
+                    "sentences": 2,
+                    "flashcards": 2,
+                    "to_be": 1,
+                },
+                "2026-05-31": {
+                    "attempts": 3,
+                    "correct": 1,
+                    "sentences": 1,
+                    "flashcards": 1,
+                    "to_be": 1,
+                },
+                "2026-06-01": {
+                    "attempts": 2,
+                    "correct": 2,
+                    "sentences": 2,
+                    "flashcards": 0,
+                    "to_be": 0,
+                },
             }
         }
     }
