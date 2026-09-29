@@ -3,7 +3,12 @@ from __future__ import annotations
 import pytest
 
 from english_trainer.rag.models import KnowledgeChunk, SearchHit
-from english_trainer.rag.retrieval import BM25Index, bm25_tokens, reciprocal_rank_fusion
+from english_trainer.rag.retrieval import (
+    BM25Index,
+    HybridRetriever,
+    bm25_tokens,
+    reciprocal_rank_fusion,
+)
 
 
 def _chunk(chunk_id: str, text: str) -> KnowledgeChunk:
@@ -39,3 +44,20 @@ def test_rrf_promotes_item_present_in_both_rankings() -> None:
     assert fused[2].dense_score is None
     with pytest.raises(ValueError, match="positive"):
         reciprocal_rank_fusion([], [], k=0)
+
+
+def test_hybrid_retriever_requires_chunks_to_be_prepared() -> None:
+    class UnusedEmbedder:
+        model = "unused"
+
+        def embed(self, texts: list[str]) -> list[list[float]]:
+            raise AssertionError("embedding should not run before preparation")
+
+    class UnusedStore:
+        def search(self, vector: list[float], limit: int = 5) -> list[SearchHit]:
+            raise AssertionError("search should not run before preparation")
+
+    retriever = HybridRetriever(UnusedEmbedder(), UnusedStore())  # type: ignore[arg-type]
+
+    with pytest.raises(RuntimeError, match=r"set_chunks\(\)"):
+        retriever.retrieve("test query", limit=5)

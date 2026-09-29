@@ -154,11 +154,15 @@ class HybridRetriever:
         self.store = store
         self.rrf_k = rrf_k
         self.bm25 = BM25Index([])
+        self._chunks_set = False
 
     def set_chunks(self, chunks: Sequence[KnowledgeChunk]) -> None:
         self.bm25 = BM25Index(chunks)
+        self._chunks_set = True
 
     def retrieve(self, query: str, *, limit: int) -> list[SearchHit]:
+        if not self._chunks_set:
+            raise RuntimeError("HybridRetriever chunks are not prepared; call set_chunks() first.")
         if limit <= 0 or not self.bm25.chunks:
             return []
         vector = self.embedder.embed([query])[0]

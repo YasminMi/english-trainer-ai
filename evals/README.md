@@ -44,6 +44,8 @@ All results use the 55-case set and `k = 5`. The first two rows use
 | Group `to be` explanations by rule (69 → 57 chunks) | 0.700 | 0.900 | 0.790 | 0.933 | 0.000 |
 | Dense + lexical boost, hashing-512 (57 chunks) | 0.300 | 0.475 | 0.375 | 1.000 | 0.000 |
 | Hybrid BM25 + dense RRF, hashing-512 (57 chunks) | 0.350 | 0.725 | 0.477 | 1.000 | 0.000 |
+| Dense + lexical boost, embeddinggemma (57 chunks) | 0.700 | 0.900 | 0.790 | 0.933 | 0.000 |
+| Hybrid BM25 + dense RRF, embeddinggemma (57 chunks) | 0.700 | 0.900 | 0.780 | 0.800 | 0.000 |
 
 Grouping the rule chunks lowers hit@1 only because the 14 near-duplicate
 chunks used to crowd the first position with the same label (`tb-01`, `tb-05`
@@ -54,9 +56,10 @@ The baseline gate accepts almost every off-topic question: `embeddinggemma`
 scores unrelated text around 0.23–0.35, so a 0.20 threshold never refuses.
 
 The hashing comparison uses the deterministic `hashing-512` embedder and a zero
-cosine threshold, so its false accept rate is 1.000 in both modes. Hybrid is now
-the default because hit@5 and MRR improve without increasing false accepts in
-this comparison. `--retrieval dense` retains the previous ranking. In both
-modes, the relevance gate checks each candidate's dense cosine, not its boosted
-or fused ranking score. Hybrid searches the same 57 indexed chunks with BM25
-and retrieves dense scores for the full corpus before fusing ranks (RRF k=60).
+cosine threshold, so its false accept rate is 1.000 in both modes. On the real
+`embeddinggemma` embedder, hybrid left hit@5 unchanged, lowered MRR from 0.790 to
+0.780, and lowered false accepts from 0.933 to 0.800. Since hit@5 and MRR did
+not both improve, the default remains `dense`. In both modes, the relevance gate
+checks each candidate's dense cosine, not its boosted or fused ranking score.
+Hybrid searches the same 57 indexed chunks with BM25 and retrieves dense scores
+for the full corpus before fusing ranks (RRF k=60).

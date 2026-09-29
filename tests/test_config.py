@@ -16,7 +16,7 @@ def test_defaults_match_documented_values() -> None:
     assert settings.rag.model == "gemma2:2b"
     assert settings.rag.embed_model == "embeddinggemma"
     assert settings.rag.min_score == pytest.approx(0.20)
-    assert settings.rag.retrieval == "hybrid"
+    assert settings.rag.retrieval == "dense"
     assert settings.huggingface.enabled is False
     assert settings.ai.local_fallback is False
 
