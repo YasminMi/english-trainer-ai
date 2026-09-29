@@ -20,3 +20,13 @@ Thumbs.db
 
 # Personal scratch notes (not part of the app)
 treining/
+
+# Build and tooling artifacts
+build/
+dist/
+*.egg-info/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/

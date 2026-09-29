@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from .hf_llm import generate_conversation_reply, OLLAMA_URL
 from .utils import clear_screen, read_choice, pause
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parents[2]
 CONV_DIR = BASE_DIR / "data" / "conversations"
 
 SYSTEM_PROMPT = """\

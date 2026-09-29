@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 from .utils import _clean_text
 
 
-BASE_DIR: Path = Path(__file__).resolve().parent.parent
+BASE_DIR: Path = Path(__file__).resolve().parents[2]
 DATA_DIR: Path = BASE_DIR / "data"
 NOTES_DIR: Path = BASE_DIR / "notes"
 CONTENT_FILE: Path = DATA_DIR / "content.json"
