@@ -1,21 +1,16 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from ..data_access import DATA_DIR
-from ..hf_llm import generate_conversation_reply
-from .chunking import build_knowledge_chunks, corpus_fingerprint
-from .embeddings import EmbeddingError, OllamaEmbeddingClient
-from .models import KnowledgeChunk, RagSource, SearchHit
-from .vector_store import QdrantKnowledgeStore, VectorStoreError
-
-RAG_INDEX_DIR = DATA_DIR / "rag_index"
+from english_trainer.rag.chunking import corpus_fingerprint
+from english_trainer.rag.embeddings import EmbeddingError
+from english_trainer.rag.models import KnowledgeChunk, RagSource, SearchHit
+from english_trainer.rag.vector_store import QdrantKnowledgeStore, VectorStoreError
 
 
 class RagError(RuntimeError):
@@ -49,14 +44,15 @@ class RagService:
     def __init__(
         self,
         *,
-        embedder: Embedder | None = None,
+        embedder: Embedder,
+        index_dir: Path,
+        generator: Callable[..., str | None],
+        chunk_builder: Callable[[dict[str, Any]], list[KnowledgeChunk]],
         store: KnowledgeStore | None = None,
-        index_dir: Path = RAG_INDEX_DIR,
-        generator: Callable[..., str | None] = generate_conversation_reply,
-        chunk_builder: Callable[[dict[str, Any]], list[KnowledgeChunk]] = build_knowledge_chunks,
-        min_score: float | None = None,
+        min_score: float = 0.20,
+        generation_model: str = "gemma2:2b",
     ) -> None:
-        self.embedder = embedder or OllamaEmbeddingClient()
+        self.embedder = embedder
         self.index_dir = index_dir
         if store is not None:
             self.store = store
@@ -67,9 +63,8 @@ class RagService:
                 raise RagError(str(exc)) from exc
         self.generator = generator
         self.chunk_builder = chunk_builder
-        self.generation_model = os.getenv("RAG_MODEL", "gemma2:2b").strip() or "gemma2:2b"
-        configured_score = os.getenv("RAG_MIN_SCORE", "0.20")
-        self.min_score = float(configured_score) if min_score is None else min_score
+        self.generation_model = generation_model
+        self.min_score = min_score
         self.manifest_path = index_dir / "manifest.json"
 
     def prepare(self, content: dict[str, Any], force: bool = False) -> int:
@@ -187,7 +182,8 @@ class RagService:
             "Cite supporting sources inline as [S1], [S2], and so on.\n"
             "If the material is insufficient, say what is missing instead of inventing a rule.\n"
             "Keep the answer under 100 words and cite references without copying their metadata.\n"
-            "When correcting a sentence, give the correction, the exact rule, and one related example.\n"
+            "When correcting a sentence, give the correction, the exact rule, "
+            "and one related example.\n"
             "Do not describe an auxiliary as a conjugated form of the main verb.\n"
             "Finish with one English practice question about the same rule, without its answer.\n\n"
             f"Student context:\n{learner_context}\n\n"
@@ -208,7 +204,7 @@ class RagService:
         self.index_dir.mkdir(parents=True, exist_ok=True)
         temp_path = self.manifest_path.with_suffix(".tmp")
         temp_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-        os.replace(temp_path, self.manifest_path)
+        temp_path.replace(self.manifest_path)
 
 
 def _rerank_hits(question: str, hits: list[SearchHit]) -> list[SearchHit]:

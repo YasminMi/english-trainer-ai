@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from pathlib import Path
 
-from .models import KnowledgeChunk, SearchHit
+from english_trainer.rag.models import KnowledgeChunk, SearchHit
 
 
 class VectorStoreError(RuntimeError):
@@ -52,7 +52,7 @@ class QdrantKnowledgeStore:
                 vector=list(vector),
                 payload=chunk.to_payload(),
             )
-            for chunk, vector in zip(chunks, vectors)
+            for chunk, vector in zip(chunks, vectors, strict=True)
         ]
         self._client.upload_points(self.collection_name, points=points, wait=True)
 

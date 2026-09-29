@@ -37,7 +37,7 @@ def test_ollama_embedding_client_reports_provider_failure(monkeypatch):
         raise requests.ConnectionError("offline")
 
     monkeypatch.setattr(requests, "post", fail)
-    client = OllamaEmbeddingClient(model="embed-test")
+    client = OllamaEmbeddingClient(model="embed-test", base_url="http://ollama")
 
     with pytest.raises(EmbeddingError, match="embed-test"):
         client.embed(["question"])

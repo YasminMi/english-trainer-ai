@@ -51,7 +51,7 @@ def test_chunk_builder_uses_markdown_and_deduplicates_explanations(tmp_path):
         ],
     }
 
-    chunks = build_knowledge_chunks(content, notes_dir=notes_dir)
+    chunks = build_knowledge_chunks(content, notes_dir, tmp_path)
 
     assert len([chunk for chunk in chunks if chunk.kind == "rule"]) == 1
     assert any(chunk.kind == "note" and "She does not work" in chunk.text for chunk in chunks)

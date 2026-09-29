@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import os
 from collections.abc import Sequence
 
 import requests
-
-from ..hf_llm import OLLAMA_URL
 
 
 class EmbeddingError(RuntimeError):
@@ -15,13 +12,13 @@ class EmbeddingError(RuntimeError):
 class OllamaEmbeddingClient:
     def __init__(
         self,
-        model: str | None = None,
-        base_url: str | None = None,
+        model: str,
+        base_url: str,
         timeout: float = 120,
         batch_size: int = 32,
     ) -> None:
-        self.model = (model or os.getenv("RAG_EMBED_MODEL", "embeddinggemma")).strip()
-        self.base_url = (base_url or OLLAMA_URL).rstrip("/")
+        self.model = model.strip()
+        self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.batch_size = max(1, batch_size)
 

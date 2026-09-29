@@ -37,13 +37,13 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging(settings.logging, log_file=log_file)
 
     if args.cli:
-        from english_trainer.cli import run_app
+        from english_trainer.interfaces import cli
 
-        run_app()
+        cli.run()
         return 0
 
     try:
-        from english_trainer.tui_app import run_tui
+        from english_trainer.interfaces.tui.app import run
     except ModuleNotFoundError as exc:
         if exc.name != "textual":
             raise
@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Or use the terminal interface: english-trainer --cli", file=sys.stderr)
         return 1
 
-    run_tui()
+    run()
     return 0
 
 

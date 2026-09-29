@@ -3,12 +3,11 @@ from __future__ import annotations
 import hashlib
 import re
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from ..data_access import BASE_DIR, NOTES_DIR
-from .models import KnowledgeChunk
+from english_trainer.rag.models import KnowledgeChunk
 
 _GENERIC_TAGS = {
     "affirmative",
@@ -26,11 +25,12 @@ _GENERIC_TAGS = {
 
 
 def build_knowledge_chunks(
-    content: dict[str, Any],
-    notes_dir: Path = NOTES_DIR,
+    content: Mapping[str, Any],
+    notes_dir: Path,
+    home: Path | None = None,
 ) -> list[KnowledgeChunk]:
     chunks: list[KnowledgeChunk] = []
-    chunks.extend(_chunks_from_markdown(notes_dir))
+    chunks.extend(_chunks_from_markdown(notes_dir, home or notes_dir.parent))
     chunks.extend(_chunks_from_explanations(content.get("to_be_exercises", [])))
     chunks.extend(_chunks_from_sentences(content.get("sentences", [])))
     chunks.extend(_chunks_from_flashcards(content.get("flashcards", [])))
@@ -44,7 +44,9 @@ def corpus_fingerprint(chunks: Iterable[KnowledgeChunk], embedding_model: str) -
     return digest.hexdigest()
 
 
-def _chunks_from_markdown(notes_dir: Path, max_chars: int = 1200) -> list[KnowledgeChunk]:
+def _chunks_from_markdown(
+    notes_dir: Path, home: Path, max_chars: int = 1200
+) -> list[KnowledgeChunk]:
     if not notes_dir.exists():
         return []
 
@@ -52,7 +54,7 @@ def _chunks_from_markdown(notes_dir: Path, max_chars: int = 1200) -> list[Knowle
     for path in sorted(notes_dir.rglob("*.md")):
         text = path.read_text(encoding="utf-8")
         title, sections = _markdown_sections(text)
-        source = _relative_source(path)
+        source = _relative_source(path, home)
         topic = _slug(path.stem)
         level = _infer_level(f"{title} {path.as_posix()}")
 
@@ -243,9 +245,9 @@ def _infer_level(value: str) -> str:
     return match.group(1) if match else "beginner"
 
 
-def _relative_source(path: Path) -> str:
+def _relative_source(path: Path, home: Path) -> str:
     try:
-        return path.relative_to(BASE_DIR).as_posix()
+        return path.relative_to(home).as_posix()
     except ValueError:
         return path.as_posix()
 

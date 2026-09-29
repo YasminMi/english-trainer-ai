@@ -1,0 +1,131 @@
+/* English Trainer AI — Textual stylesheet (GitHub dark palette). */
+Screen      { background: #0d1117; color: #e6edf3; }
+Footer      { background: #161b22; color: #8b949e; }
+Rule        { color: #30363d; }
+
+Input       { border: tall #30363d; background: #0d1117; color: #e6edf3; }
+Input:focus { border: tall #00d4aa; }
+
+Button              { background: #161b22; border: tall #30363d; color: #e6edf3; text-style: none; }
+Button:hover        { background: #1c2128; border: tall #00d4aa; color: #00d4aa; text-style: none; }
+Button:focus        { background: #1c2128; border: tall #00d4aa; text-style: none; }
+Button.-active      { text-style: none; }
+Button:focus-within { text-style: none; }
+
+ProgressBar > .bar--bar      { color: #00d4aa; }
+ProgressBar > .bar--complete { color: #3fb950; }
+
+/* ── shared util classes ── */
+.muted   { color: #8b949e; }
+.correct { color: #3fb950; text-style: bold; }
+.wrong   { color: #f85149; text-style: bold; }
+.warn    { color: #e3b341; }
+
+/* ── section header strip ── */
+.sec-header {
+    background: #161b22; color: #58a6ff; text-style: bold;
+    padding: 0 2; height: 3; border-bottom: solid #30363d;
+    content-align: left middle;
+}
+
+/* ────────── HOME ────────── */
+#home-brand {
+    background: #161b22; color: #00d4aa; text-style: bold;
+    text-align: center; height: 3; content-align: center middle;
+    border-bottom: solid #21262d;
+}
+#home-stats {
+    background: #161b22; color: #8b949e;
+    padding: 0 2; height: 2; border-bottom: solid #21262d;
+}
+#home-pb { width: 1fr; height: 1; background: #161b22; border-bottom: solid #30363d; }
+#home-pb Bar { width: 1fr; }
+#menu-wrap { padding: 1 8; height: 1fr; align: center top; overflow-y: auto; }
+.menu-btn {
+    width: 100%; height: 3; margin: 0 0 1 0;
+    background: #161b22; border: tall #30363d;
+    color: #e6edf3; content-align: left middle; padding: 0 2;
+}
+.menu-btn:hover { background: #1c2128; border: tall #00d4aa; color: #00d4aa; }
+.menu-btn:focus { background: #1c2128; border: tall #00d4aa; }
+
+/* ────────── FLASHCARD SPLIT ────────── */
+#fc-layout   { height: 1fr; padding: 1 1 0 1; }
+#fc-left     { width: 3fr; background: #161b22; border: tall #30363d; padding: 1 2; margin-right: 1; }
+#fc-right    { width: 2fr; background: #161b22; border: tall #30363d; padding: 1 2; }
+#fc-word {
+    text-align: center; text-style: bold; color: #e6edf3;
+    height: 7; border: double #00d4aa; background: #0d1117;
+    content-align: center middle; margin: 1 0;
+}
+#fc-item-title { color: #58a6ff; text-style: bold; margin-bottom: 1; }
+#fc-feedback   { min-height: 3; }
+
+/* ────────── SENTENCE TRAINING ────────── */
+#st-wrap     { padding: 2 4; }
+#st-sentence {
+    text-style: bold; color: #ffa657; padding: 1 2;
+    border: tall #30363d; background: #161b22;
+    margin: 1 0; min-height: 3;
+}
+#st-feedback { min-height: 4; }
+
+/* ────────── TO BE ────────── */
+#tobe-wrap   { padding: 2 4; }
+#tobe-question {
+    text-style: bold; color: #ffa657; padding: 1 2;
+    border: tall #30363d; background: #161b22;
+    margin: 1 0; text-align: center; min-height: 3;
+}
+#tobe-feedback { min-height: 3; text-align: center; }
+.opt-btn { width: 100%; height: 3; margin: 0 0 1 0; }
+
+/* ────────── DICTIONARY ────────── */
+#dict-wrap   { padding: 2 4; }
+#dict-result {
+    background: #161b22; border: tall #30363d;
+    padding: 1 2; min-height: 8; margin-top: 1;
+}
+
+/* ────────── CONVERSATION ────────── */
+#conv-titlebar {
+    background: #161b22; color: #58a6ff; text-style: bold;
+    padding: 0 2; height: 3; border-bottom: solid #30363d;
+    content-align: left middle;
+}
+#conv-log        { background: #0d1117; padding: 0 1; height: 1fr; }
+#conv-status     { color: #8b949e; height: 1; padding: 0 2; background: #161b22; }
+#conv-input-area { height: 5; background: #161b22; border-top: solid #30363d; padding: 1 2; }
+
+/* ────────── PROGRESS ────────── */
+#prog-wrap   { padding: 2 4; }
+.prog-title  { color: #58a6ff; text-style: bold; margin-bottom: 1; }
+.prog-row    { height: 3; margin-bottom: 1; }
+.prog-name   { width: 22; content-align: left middle; }
+.prog-count  { width: 14; content-align: right middle; color: #8b949e; }
+.prog-bar    { width: 1fr; height: 1; }
+
+/* ────────── DICTATION ────────── */
+#dt-wrap     { padding: 2 4; }
+#dt-status   {
+    text-align: center; color: #00d4aa; text-style: bold;
+    padding: 1 2; border: tall #30363d; background: #161b22;
+    margin: 1 0; min-height: 3; content-align: center middle;
+}
+#dt-feedback { min-height: 4; }
+#dt-replay   { width: 20; margin-top: 1; }
+
+/* ────────── FREE WRITING ────────── */
+#fw-wrap         { padding: 2 4; }
+#fw-input-area   { margin-top: 1; }
+#fw-feedback     {
+    background: #161b22; border: tall #30363d;
+    padding: 1 2; min-height: 8; margin-top: 1;
+}
+.hidden      { display: none; }
+.override-btn { background: #0d2818; border: tall #3fb950; color: #3fb950; margin-top: 1; }
+
+#rag-wrap     { padding: 1 3; }
+#rag-status   { color: #8b949e; height: 2; margin-top: 1; }
+#rag-answer   { border: tall #30363d; padding: 1 2; min-height: 8; height: 1fr; }
+#rag-sources  { color: #8b949e; min-height: 5; margin-top: 1; }
