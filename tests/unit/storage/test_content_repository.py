@@ -39,7 +39,7 @@ def paths(tmp_path: Path) -> Paths:
     (paths.notes_dir / "english").mkdir(parents=True)
     (paths.notes_dir / "english" / "sample.md").write_text(NOTE, encoding="utf-8")
     paths.content_file.write_text(
-        json.dumps({"sentences": [{"id": "s1", "en": "Hello.", "pt": "Olá."}]}),
+        json.dumps({"version": 1, "sentences": [{"id": "s1", "en": "Hello.", "pt": "Olá."}]}),
         encoding="utf-8",
     )
     return paths
@@ -91,7 +91,36 @@ def test_missing_files_yield_empty_sections(tmp_path: Path) -> None:
 
 def test_validate_content_reports_schema_errors() -> None:
     with pytest.raises(ContentValidationError, match="pt"):
-        validate_content({"sentences": [{"id": "s1", "en": "Hello."}]})
+        validate_content({"version": 1, "sentences": [{"id": "s1", "en": "Hello."}]})
+
+
+@pytest.mark.parametrize(
+    ("document", "message"),
+    [
+        ({"version": 1, "sentences": [{"id": "s1", "en": "Hi."}]}, "sentences.0.pt"),
+        ({"version": 1, "sentences": "bad"}, "sentences"),
+        (
+            {"version": 1, "sentences": [{"id": "s", "en": "A", "pt": "B"}] * 2},
+            "duplicate id",
+        ),
+        (
+            {
+                "version": 1,
+                "to_be_exercises": [
+                    {"id": "x", "question": "q", "options": ["a", "b"], "correct": "c", "pt": "p"}
+                ],
+            },
+            "correct must match",
+        ),
+        ({"version": 2}, "version"),
+    ],
+)
+def test_broken_versioned_content_has_path_and_field(
+    document: dict[str, object], message: str
+) -> None:
+    with pytest.raises(ContentValidationError, match=message) as error:
+        validate_content(document, path="fixture.json")
+    assert "fixture.json" in str(error.value)
 
 
 def test_versioned_content_matches_the_schema() -> None:

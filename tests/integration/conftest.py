@@ -13,6 +13,7 @@ from english_trainer.services.writing import WritingService
 from tests.fakes import FakeChatModel
 
 CONTENT = {
+    "version": 1,
     "metadata": {"flashcards_categories": ["food"]},
     "sentences": [{"id": "s1", "en": "I am happy.", "pt": "Eu estou feliz.", "tags": ["to_be"]}],
     "flashcards": [{"id": "f1", "en": "apple", "pt": "maçã", "category": "food"}],

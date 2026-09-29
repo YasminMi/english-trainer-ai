@@ -166,6 +166,8 @@ Prompts sent to Hugging Face leave the local machine. Dictionary searches use `d
 
 Runtime data lives under `data/`: `progress.json` (attempts, goals, SRS state), `user_content.json` (CLI-created entries), `ai_cache.json` (cached generations), `conversations/` (saved sessions), `reports/` (exports) and `rag_index/` (local Qdrant collection and manifest). These paths and interrupted-write temp files are ignored by Git.
 
+The shipped `data/content.json` is versioned with `version: 1`. It contains optional metadata plus sentence records (`id`, English and Portuguese text, optional tags), flashcards (`id`, English and Portuguese text, optional category), `to_be_exercises` (`id`, question, options, correct answer, Portuguese translation and optional explanation/tense/focus), and an optional dictionary map. IDs are unique across all three record sections; each exercise's correct answer must appear in its options. `ContentRepository` validates this file before merging it with learner content and Markdown notes. Run `english-trainer validate-content` to check it directly; validation is part of `make check`.
+
 ## Tests and CI
 
 ```bash
@@ -188,7 +190,7 @@ The TUI is still concentrated in one module, which is the clearest candidate for
 - Evaluate retrieval quality with Recall@K.
 - Continue tuning the relevance gate using the retrieval evaluation set.
 - [x] Add integration tests for provider failures.
-- Validate versioned content against a schema.
+- [x] Validate versioned content against a schema.
 
 ## License
 

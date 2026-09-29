@@ -32,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", metavar="COMMAND")
     commands.add_parser("tui", help="start the Textual interface (default)")
     commands.add_parser("cli", help="start the plain terminal interface")
+    commands.add_parser("validate-content", help="validate the shipped versioned study content")
     evaluation.add_arguments(
         commands.add_parser("eval-rag", help="evaluate retrieval on the gold question set")
     )
@@ -62,6 +63,17 @@ def main(argv: list[str] | None = None) -> int:
         from english_trainer.interfaces import evaluation
 
         return evaluation.run(args, settings)
+
+    if command == "validate-content":
+        from english_trainer.storage.content import ContentRepository, ContentValidationError
+
+        try:
+            ContentRepository(settings.paths).validate_versioned()
+        except (ContentValidationError, ValueError) as exc:
+            print(f"Content validation failed:\n{exc}", file=sys.stderr)
+            return 1
+        print(f"Valid content: {settings.paths.content_file}")
+        return 0
 
     if command == "cli":
         from english_trainer.interfaces import cli

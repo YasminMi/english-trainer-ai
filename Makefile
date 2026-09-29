@@ -27,7 +27,10 @@ test: ## Run the test suite
 cov: ## Run tests with coverage
 	$(PYTHON) -m pytest -q --cov --cov-report=term-missing
 
-check: lint typecheck test ## Run every quality gate
+check: lint typecheck validate-content test ## Run every quality gate
+
+validate-content: ## Validate the shipped versioned study content
+	$(PYTHON) -m english_trainer validate-content
 
 run: ## Start the Textual TUI
 	english-trainer
