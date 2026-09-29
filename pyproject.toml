@@ -31,6 +31,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "qdrant-client>=1.9,<2",
     "textual>=0.50",
+    "typing-extensions>=4.12",
 ]
 
 [project.optional-dependencies]
@@ -66,7 +67,7 @@ packages = ["src/english_trainer"]
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
-addopts = ["-ra", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 xfail_strict = true
 filterwarnings = ["error::DeprecationWarning:english_trainer.*"]
 

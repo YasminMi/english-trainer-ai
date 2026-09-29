@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -39,3 +40,15 @@ def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("ENGLISH_TRAINER_HOME", str(tmp_path))
     get_settings.cache_clear()
     return tmp_path
+
+
+@pytest.fixture(autouse=True)
+def reset_package_logger() -> Iterator[None]:
+    """Undo configure_logging() so caplog sees records in every test."""
+    yield
+    logger = logging.getLogger("english_trainer")
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+        handler.close()
+    logger.propagate = True
+    logger.setLevel(logging.NOTSET)
