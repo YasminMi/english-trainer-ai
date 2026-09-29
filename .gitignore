@@ -12,6 +12,7 @@ data/conversations/
 data/reports/
 data/rag_index/
 data/logs/
+data/.cache/
 data/.*.tmp
 
 # OS/editor

@@ -12,7 +12,11 @@ class VectorStoreError(RuntimeError):
 
 
 class QdrantKnowledgeStore:
-    def __init__(self, path: Path, collection_name: str = "english_trainer_knowledge") -> None:
+    """Embedded Qdrant collection; ``path=None`` keeps it in memory (evaluation, tests)."""
+
+    def __init__(
+        self, path: Path | None, collection_name: str = "english_trainer_knowledge"
+    ) -> None:
         try:
             from qdrant_client import QdrantClient
         except ImportError as exc:
@@ -20,9 +24,12 @@ class QdrantKnowledgeStore:
                 "qdrant-client is not installed. Install the project dependencies first."
             ) from exc
 
-        path.mkdir(parents=True, exist_ok=True)
         self.collection_name = collection_name
-        self._client = QdrantClient(path=str(path))
+        if path is None:
+            self._client = QdrantClient(location=":memory:")
+        else:
+            path.mkdir(parents=True, exist_ok=True)
+            self._client = QdrantClient(path=str(path))
 
     def count(self) -> int:
         if not self._client.collection_exists(self.collection_name):

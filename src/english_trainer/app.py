@@ -15,13 +15,15 @@ from typing import Any
 from english_trainer.config import Settings, get_settings
 from english_trainer.domain.progress import register_ai_use, register_result
 from english_trainer.domain.types import Content, PracticeMode, Progress
-from english_trainer.llm.base import ChatMessage, GenerationOptions, LLMUnavailableError
 from english_trainer.llm.gateway import TextGenerator, build_text_generator
 from english_trainer.llm.ollama import OllamaClient
-from english_trainer.rag import RagService
+from english_trainer.rag import RagConfig, RagError, RagService
 from english_trainer.rag.chunking import build_knowledge_chunks
 from english_trainer.rag.embeddings import OllamaEmbeddingClient
+from english_trainer.rag.index import KnowledgeIndex
 from english_trainer.rag.models import KnowledgeChunk
+from english_trainer.rag.retrieval import DenseRetriever
+from english_trainer.rag.vector_store import QdrantKnowledgeStore, VectorStoreError
 from english_trainer.services.coach import CoachService
 from english_trainer.services.conversation import ConversationSession
 from english_trainer.services.dictionary import OnlineDictionary
@@ -84,40 +86,27 @@ class Application:
     def _build_rag(self) -> RagService:
         settings = self.settings
         paths = settings.paths
-
-        def generate(
-            messages: list[ChatMessage],
-            *,
-            system_prompt: str = "",
-            model: str | None = None,
-            max_new_tokens: int = 160,
-            timeout: float = 180,
-            temperature: float = 0.0,
-        ) -> str | None:
-            try:
-                return self.ollama.chat(
-                    messages,
-                    system=system_prompt or None,
-                    model=model,
-                    options=GenerationOptions(
-                        temperature=temperature, max_tokens=max_new_tokens, timeout=timeout
-                    ),
-                )
-            except LLMUnavailableError:
-                return None
+        embedder = OllamaEmbeddingClient(
+            model=settings.rag.embed_model, base_url=settings.ollama.base_url
+        )
+        try:
+            store = QdrantKnowledgeStore(paths.rag_index_dir / "qdrant")
+        except VectorStoreError as exc:
+            raise RagError(str(exc)) from exc
 
         def chunks(content: Mapping[str, Any]) -> list[KnowledgeChunk]:
             return build_knowledge_chunks(content, paths.notes_dir, paths.home)
 
         return RagService(
-            embedder=OllamaEmbeddingClient(
-                model=settings.rag.embed_model, base_url=settings.ollama.base_url
-            ),
-            index_dir=paths.rag_index_dir,
-            generator=generate,
+            index=KnowledgeIndex(embedder, store, paths.rag_index_dir),
+            retriever=DenseRetriever(embedder, store, oversample=1),
+            generator=self.ollama,
             chunk_builder=chunks,
-            min_score=settings.rag.min_score,
-            generation_model=settings.rag.model,
+            config=RagConfig(
+                model=settings.rag.model,
+                top_k=settings.rag.top_k,
+                min_score=settings.rag.min_score,
+            ),
         )
 
 

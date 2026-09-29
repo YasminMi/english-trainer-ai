@@ -1,4 +1,9 @@
-"""Command-line entry point: ``english-trainer`` or ``python -m english_trainer``."""
+"""Command-line entry point: ``english-trainer`` or ``python -m english_trainer``.
+
+``english-trainer``            Textual TUI (default)
+``english-trainer cli``        plain terminal interface (``--cli`` still works)
+``english-trainer eval-rag``   retrieval quality report on the gold question set
+"""
 
 from __future__ import annotations
 
@@ -14,13 +19,28 @@ def _configure_stdio() -> None:
             stream.reconfigure(encoding="utf-8", errors="replace")
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    from english_trainer import __version__
+    from english_trainer.interfaces import evaluation
+
     parser = argparse.ArgumentParser(
         prog="english-trainer",
         description="Offline-first English trainer with spaced repetition and a local RAG tutor.",
     )
-    parser.add_argument("--cli", action="store_true", help="use the plain terminal interface")
-    args = parser.parse_args(argv)
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("--cli", action="store_true", help=argparse.SUPPRESS)
+    commands = parser.add_subparsers(dest="command", metavar="COMMAND")
+    commands.add_parser("tui", help="start the Textual interface (default)")
+    commands.add_parser("cli", help="start the plain terminal interface")
+    evaluation.add_arguments(
+        commands.add_parser("eval-rag", help="evaluate retrieval on the gold question set")
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    command = "cli" if args.cli else (args.command or "tui")
 
     _configure_stdio()
 
@@ -33,10 +53,17 @@ def main(argv: list[str] | None = None) -> int:
 
     settings = get_settings()
     # The TUI owns the terminal, so its logs go to a file instead of stderr.
-    log_file = None if args.cli else settings.paths.data_dir / "logs" / "english-trainer.log"
+    log_file = (
+        settings.paths.data_dir / "logs" / "english-trainer.log" if command == "tui" else None
+    )
     configure_logging(settings.logging, log_file=log_file)
 
-    if args.cli:
+    if command == "eval-rag":
+        from english_trainer.interfaces import evaluation
+
+        return evaluation.run(args, settings)
+
+    if command == "cli":
         from english_trainer.interfaces import cli
 
         cli.run()
@@ -48,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
         if exc.name != "textual":
             raise
         print("Textual is not installed. Run: pip install textual", file=sys.stderr)
-        print("Or use the terminal interface: english-trainer --cli", file=sys.stderr)
+        print("Or use the terminal interface: english-trainer cli", file=sys.stderr)
         return 1
 
     run()
