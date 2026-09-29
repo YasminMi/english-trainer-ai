@@ -76,18 +76,22 @@ class OllamaEmbeddingClient:
                     timeout=self.timeout,
                 )
                 response.raise_for_status()
-                raw_vectors = response.json().get("embeddings")
-            except (requests.RequestException, TypeError, ValueError) as exc:
+                data = response.json()
+                raw_vectors = data.get("embeddings") if isinstance(data, dict) else None
+                if not isinstance(raw_vectors, list) or len(raw_vectors) != len(batch):
+                    raise EmbeddingError("Ollama returned an invalid embedding response.")
+                batch_vectors: list[list[float]] = []
+                for vector in raw_vectors:
+                    if not isinstance(vector, list) or not vector:
+                        raise EmbeddingError("Ollama returned an empty embedding vector.")
+                    batch_vectors.append([float(value) for value in vector])
+            except EmbeddingError:
+                raise
+            except (requests.RequestException, TypeError, ValueError, AttributeError) as exc:
                 raise EmbeddingError(
                     f"Could not generate embeddings with Ollama model '{self.model}'."
                 ) from exc
-
-            if not isinstance(raw_vectors, list) or len(raw_vectors) != len(batch):
-                raise EmbeddingError("Ollama returned an invalid embedding response.")
-            for vector in raw_vectors:
-                if not isinstance(vector, list) or not vector:
-                    raise EmbeddingError("Ollama returned an empty embedding vector.")
-                vectors.append([float(value) for value in vector])
+            vectors.extend(batch_vectors)
         return vectors
 
 

@@ -187,7 +187,7 @@ The TUI is still concentrated in one module, which is the clearest candidate for
 
 - Evaluate retrieval quality with Recall@K.
 - Continue tuning the relevance gate using the retrieval evaluation set.
-- Add integration tests for provider failures.
+- [x] Add integration tests for provider failures.
 - Validate versioned content against a schema.
 
 ## License
