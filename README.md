@@ -151,7 +151,7 @@ make check
 
 `make check` runs Ruff lint and format checks, strict mypy, content validation, and pytest. The suite is divided into [unit tests](tests/unit) for domain, storage, services, providers, and RAG logic, and [integration tests](tests/integration) for CLI/TUI, local Qdrant, offline behavior, and provider failures. The current `python -m pytest -q` run passed **166 tests**.
 
-[CI](.github/workflows/ci.yml) runs on **Ubuntu, Windows, and macOS**, each with **Python 3.11**. It installs the `all` and `dev` dependencies, checks compilation and imports, then runs pytest. Ruff, mypy, and content validation are local `make check` targets; they are not CI steps in the current workflow.
+[CI](.github/workflows/ci.yml) runs on **Ubuntu, Windows, and macOS**, each with **Python 3.11**. It installs the `all` and `dev` dependencies, checks compilation and imports, then runs pytest. Ruff, strict mypy, and content validation also run in CI on Ubuntu.
 
 ## Running locally
 

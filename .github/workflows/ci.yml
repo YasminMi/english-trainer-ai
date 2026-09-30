@@ -28,7 +28,15 @@ jobs:
       - name: Check syntax and imports
         run: |
           python -m compileall -q src
-          python -c "import english_trainer.cli, english_trainer.tui_app"
+          python -c "import english_trainer.__main__, english_trainer.interfaces.cli, english_trainer.interfaces.tui.app"
+
+      - name: Lint, type-check and validate content
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          ruff check .
+          ruff format --check .
+          mypy
+          english-trainer validate-content
 
       - name: Run tests
         run: python -m pytest -q
